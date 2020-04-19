@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"forge.lmig.com/n1505471/pizza-shop/app/domain/order"
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 	ddbES "forge.lmig.com/n1505471/pizza-shop/eventsource/store/dynamodb"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order"
 	"github.com/apex/gateway"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"

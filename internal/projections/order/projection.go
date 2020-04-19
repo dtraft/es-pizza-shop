@@ -3,9 +3,9 @@ package order
 import (
 	"fmt"
 
-	"forge.lmig.com/n1505471/pizza-shop/app/domain/order/event"
-	"forge.lmig.com/n1505471/pizza-shop/app/domain/order/model"
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"

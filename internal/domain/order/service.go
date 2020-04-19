@@ -1,9 +1,9 @@
 package order
 
 import (
-	"forge.lmig.com/n1505471/pizza-shop/app/domain/order/command"
-	"forge.lmig.com/n1505471/pizza-shop/app/domain/order/model"
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/command"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 	"github.com/google/uuid"
 )
 

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"forge.lmig.com/n1505471/pizza-shop/app/domain/order/model"
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 )
 
 func init() {
