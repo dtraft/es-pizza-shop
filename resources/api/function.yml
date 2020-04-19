@@ -1,0 +1,19 @@
+api:
+  handler: ./.bin/api
+  events:
+    - http:
+        path: '{proxy+}'
+        method: any
+  environment:
+    TABLE_NAME: !Ref EventsTable
+  iamRoleStatementsName: api-role
+  iamRoleStatements:
+    - Effect: Allow     
+      Action:
+        - dynamodb:PutItem   
+        - dynamodb:Query     
+      Resource: !GetAtt EventsTable.Arn
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+      Resource: '*'

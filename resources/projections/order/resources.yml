@@ -1,0 +1,12 @@
+Resources:
+  OrderTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties: 
+      TableName: 'OrderTable-${opt:stage}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH

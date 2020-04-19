@@ -1,0 +1,36 @@
+EventForwarder:
+  handler: ./.bin/eventforwarder
+  events:
+    - stream: 
+        type: dynamodb
+        arn: !GetAtt EventsTable.StreamArn
+        startingPosition: LATEST
+  environment:
+    EVENT_BUS: !Ref EventBus
+    BUCKET_NAME: !Ref EventRepository
+  iamRoleStatementsName: 'EventForwarderRole-${opt:stage}'
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+      Resource: '*'
+    - Effect: "Allow"        
+      Action:
+        - dynamodb:DescribeStream
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:ListStreams   
+      Resource: !GetAtt EventsTable.StreamArn
+    - Effect: "Allow"        
+      Action:
+        - SNS:Publish       
+      Resource: !Ref EventBus
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+      Resource:
+        - !GetAtt EventRepository.Arn
+        - !Join
+            - '/'
+            - - !GetAtt EventRepository.Arn
+              - '*'

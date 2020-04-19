@@ -1,0 +1,13 @@
+package command
+
+import "forge.lmig.com/n1505471/pizza-shop/app/domain/order/model"
+
+// StartOrderCommand starts an order
+type StartOrderCommand struct {
+	OrderID string
+	Type    model.ServiceType
+}
+
+func (c *StartOrderCommand) AggregateID() string {
+	return c.OrderID
+}

@@ -1,0 +1,33 @@
+service: pizza-shop
+
+plugins:
+  - serverless-iam-roles-per-function
+
+package:
+  exclude:
+    - '**/**'
+  include:
+    - ./.bin/**
+
+provider:
+  name: aws
+  runtime: go1.x
+  versionFunctions: false
+  stage: ${opt:stage, self:custom.defaultStage}
+
+functions:
+  # API
+  - ${file(resources/api/function.yml)}
+
+  # EventForwarder - stores events in repo and forward to SNS
+  - ${file(resources/eventforwarder.yml)}
+
+  # Order Projection
+  - ${file(resources/projections/order/function.yml)}
+
+resources:
+  # EventTable, EventRepository, and EventBus
+  - ${file(resources/events.yml)}
+
+  # OrderTable
+  - ${file(resources/projections/order/resources.yml)}

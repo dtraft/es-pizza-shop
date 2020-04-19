@@ -1,0 +1,19 @@
+OrderProjection:
+  handler: ./.bin/orderprojection
+  environment:
+    TABLE_NAME: !Ref OrderTable
+  events:
+    - sns: 
+        arn: !Ref EventBus
+        topicName: 'EventBus-${opt:stage}'
+        filterPolicy:
+          eventType:
+            - OrderStartedEvent
+            - OrderServiceTypeSetEvent
+  iamRoleStatementsName: 'OrderProjectionRole-${opt:stage}'
+  iamRoleStatements:
+    - Effect: Allow      
+      Action:
+        - dynamodb:PutItem   
+        - dynamodb:Query     
+      Resource: !GetAtt OrderTable.Arn

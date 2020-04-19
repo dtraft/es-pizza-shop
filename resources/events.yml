@@ -1,0 +1,29 @@
+Resources:
+  # DynamoDB Table
+  EventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: EventsTable-${opt:stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: aggregateId
+          AttributeType: S
+        - AttributeName: timestampEventIdCompositeKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: aggregateId
+          KeyType: HASH
+        - AttributeName: timestampEventIdCompositeKey
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      
+  # S3 Bucket
+  EventRepository:
+    Type: AWS::S3::Bucket
+
+  # Event Topic
+  EventBus:
+    Type: AWS::SNS::Topic
+    Properties: 
+      TopicName: EventBus-${opt:stage}
