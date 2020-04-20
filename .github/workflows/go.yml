@@ -49,4 +49,4 @@ jobs:
 
     - name: Serverless Deployment
       if: github.ref == 'refs/heads/master'
-      uses: npm run deploy
+      run: npm run deploy
