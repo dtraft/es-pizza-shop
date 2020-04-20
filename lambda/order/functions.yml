@@ -1,0 +1,76 @@
+# Write API
+OrderWriteApi:
+  handler: ./.bin/order_writeapi
+  events:
+    - http:
+        path: '{proxy+}'
+        method: post
+        cors: true
+    - http:
+        path: '{proxy+}'
+        method: put
+        cors: true
+    - http:
+        path: '{proxy+}'
+        method: delete
+        cors: true
+  environment:
+    TABLE_NAME: !Ref EventsTable
+  iamRoleStatementsName: WriteApiRole-${opt:stage}
+  iamRoleStatements:
+    - Effect: Allow     
+      Action:
+        - dynamodb:PutItem   
+        - dynamodb:Query     
+      Resource: !GetAtt EventsTable.Arn
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+      Resource: '*'
+
+# Read API
+OrderReadApi:
+  handler: ./.bin/order_readapi
+  events:
+    - http:
+        path: '{proxy+}'
+        method: get
+        cors: true
+  environment:
+    TABLE_NAME: !Ref OrderTable
+  iamRoleStatementsName: ReadApiRole-${opt:stage}
+  iamRoleStatements:
+    - Effect: Allow     
+      Action:
+        - dynamodb:Scan   
+        - dynamodb:Query    
+        - dynamodb:BatchGetItem
+        - dynamodb:GetItem 
+      Resource: !GetAtt OrderTable.Arn
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+      Resource: '*'
+
+# Projection
+OrderProjection:
+  handler: ./.bin/order_projection
+  environment:
+    TABLE_NAME: !Ref OrderTable
+  events:
+    - sns: 
+        arn: !Ref EventBus
+        topicName: 'EventBus-${opt:stage}'
+        filterPolicy:
+          eventType:
+            - OrderStartedEvent
+            - OrderServiceTypeSetEvent
+  iamRoleStatementsName: 'OrderProjectionRole-${opt:stage}'
+  iamRoleStatements:
+    - Effect: Allow      
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem   
+        - dynamodb:Query     
+      Resource: !GetAtt OrderTable.Arn

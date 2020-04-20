@@ -1,16 +1,19 @@
-default: clean writeapi readapi eventforwarder orderprojection
+default: clean infrastructure_eventforwarder order_writeapi order_readapi order_projection
 
-writeapi:
-	env GOOS=linux go build -ldflags="-s -w"  -o .bin/writeapi lambda/api/writeapi.go
+# Infrastructure
+infrastructure_eventforwarder:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/infrastructure_eventforwarder lambda/infrastructure/eventforwarder/eventforwarder.go
 
-readapi:
-	env GOOS=linux go build -ldflags="-s -w"  -o .bin/readapi lambda/api/readapi.go
+# Order
+order_writeapi:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_writeapi lambda/order/api/writeapi/order_writeapi.go
 
-eventforwarder:
-	env GOOS=linux go build -ldflags="-s -w"  -o .bin/eventforwarder lambda/infrastructure/eventforwarder.go
+order_readapi:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_readapi lambda/order/api/readapi/order_readapi.go
 
-orderprojection:
-	env GOOS=linux go build -ldflags="-s -w"  -o .bin/orderprojection lambda/projections/order.go
+order_projection:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_projection lambda/order/projection/order_projection.go
 
+# Utils
 clean: 
 	rm -rf .bin/*

@@ -16,19 +16,15 @@ provider:
   stage: ${opt:stage, self:custom.defaultStage}
 
 functions:
-  # API
-  - ${file(resources/api/readapi.yml)}
-  - ${file(resources/api/writeapi.yml)}
+  # Infrastructure
+  - ${file(lambda/infrastructure/functions.yml)}
 
-  # EventForwarder - stores events in repo and forward to SNS
-  - ${file(resources/eventforwarder.yml)}
-
-  # Order Projection
-  - ${file(resources/projections/order/function.yml)}
+  # Order API
+  - ${file(lambda/order/functions.yml)}
 
 resources:
-  # EventTable, EventRepository, and EventBus
-  - ${file(resources/events.yml)}
+  # Infrastructure - EventTable, EventRepository, and EventBus
+  - ${file(lambda/infrastructure/resources.yml)}
 
-  # OrderTable
-  - ${file(resources/projections/order/resources.yml)}
+  # Order - OrderTable
+  - ${file(lambda/order/resources.yml)}

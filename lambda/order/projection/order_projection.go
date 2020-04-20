@@ -8,6 +8,7 @@ import (
 
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order"
+	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/repository"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,7 +16,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-var projection = order.NewProjection(dynamodb.New(session.New(), aws.NewConfig()), os.Getenv("TABLE_NAME"))
+var repo = repository.NewRepository(dynamodb.New(session.New(), aws.NewConfig()), os.Getenv("TABLE_NAME"))
+var projection = order.NewProjection(repo)
 
 func main() {
 	lambda.Start(HandleRequest)

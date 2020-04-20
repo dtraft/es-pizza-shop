@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	order "forge.lmig.com/n1505471/pizza-shop/internal/projections/order/repository"
+	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/repository"
 	"github.com/apex/gateway"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,7 +15,7 @@ import (
 )
 
 var svc = dynamodb.New(session.New(), aws.NewConfig())
-var repository = order.NewRepository(svc, os.Getenv("TABLE_NAME"))
+var repo = repository.NewRepository(svc, os.Getenv("TABLE_NAME"))
 var router = httprouter.New()
 
 func init() {
@@ -32,7 +32,7 @@ func main() {
 
 func queryAllOrders(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
-	orders, err := repository.QueryAllOrders()
+	orders, err := repo.QueryAllOrders()
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

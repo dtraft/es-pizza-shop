@@ -1,5 +1,5 @@
 EventForwarder:
-  handler: ./.bin/eventforwarder
+  handler: ./.bin/infrastructure_eventforwarder
   events:
     - stream: 
         type: dynamodb
