@@ -3,11 +3,7 @@
   "version": "1.0.0",
   "description": "Proof of Concept for cloud native event sourcing architecture",
   "dependencies": {
-    "serverless": "^1.67.3",
     "serverless-iam-roles-per-function": "^2.0.2"
-  },
-  "scripts": {
-    "deploy": "serverless deploy --stage dev"
   },
   "devDependencies": {},
   "author": "Drew Trafton",
