@@ -7,26 +7,21 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/go-test/deep"
+	"io/ioutil"
+	"log"
+	"os"
 	"testing"
 )
-
-type mockDynamoDb struct {
-	dynamodbiface.DynamoDBAPI
-	Expected interface{}
-}
 
 var mockTable = "test"
 var mockOrderID = "testOrderId"
 var mockDb = &mockDynamoDb{}
 var repo = NewRepository(mockDb, mockTable)
 
-func (m mockDynamoDb) UpdateItem(in *dynamodb.UpdateItemInput) (*dynamodb.UpdateItemOutput, error) {
-	// Check if this matches the expected
-	if diff := deep.Equal(m.Expected, in); diff != nil {
-		return nil, fmt.Errorf("%s", diff)
-	}
-	// Only need to return mocked response output
-	return &dynamodb.UpdateItemOutput{}, nil
+// SETUP
+func TestMain(m *testing.M) {
+	log.SetOutput(ioutil.Discard)
+	os.Exit(m.Run())
 }
 
 func TestRepository_Patch(t *testing.T) {
@@ -57,7 +52,7 @@ func TestRepository_Patch(t *testing.T) {
 					":test":          {S: aws.String("me")},
 					":nestedtest":    {S: aws.String("4u")},
 				},
-				UpdateExpression: aws.String("SET #test = :test, #nested.#test = :nestedtest, #nested.#another = :nestedanother"),
+				UpdateExpression: aws.String("SET #nested.#another = :nestedanother, #nested.#test = :nestedtest, #test = :test"),
 			},
 		},
 		{
@@ -121,4 +116,18 @@ func TestPatchHelper(t *testing.T) {
 		}
 	}
 
+}
+
+type mockDynamoDb struct {
+	dynamodbiface.DynamoDBAPI
+	Expected interface{}
+}
+
+func (m mockDynamoDb) UpdateItem(in *dynamodb.UpdateItemInput) (*dynamodb.UpdateItemOutput, error) {
+	// Check if this matches the expected
+	if diff := deep.Equal(m.Expected, in); diff != nil {
+		return nil, fmt.Errorf("%s", diff)
+	}
+	// Only need to return mocked response output
+	return &dynamodb.UpdateItemOutput{}, nil
 }

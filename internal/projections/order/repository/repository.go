@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	. "forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
@@ -58,7 +59,9 @@ func (r *Repository) Patch(orderID string, updates map[string]interface{}) error
 	names := make(map[string]*string)
 	values := make(map[string]*dynamodb.AttributeValue)
 	var expressions []string
-	for name, value := range vals {
+	// Sort the keys for test predicability
+	for _, name := range sortedKeys(vals) {
+		value := vals[name]
 		keys := strings.Split(name, ".")
 		valueKey := ":" + strings.Join(keys, "")
 		for i, key := range keys {
@@ -112,6 +115,17 @@ func patchHelper(update interface{}, path string, vals map[string]*dynamodb.Attr
 		vals[path] = a
 	}
 	return nil
+}
+
+func sortedKeys(m map[string]*dynamodb.AttributeValue) []string {
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 /*
