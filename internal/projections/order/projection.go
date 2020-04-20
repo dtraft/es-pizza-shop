@@ -45,5 +45,8 @@ func (p *Projection) handleOrderStartedEvent(e *event.OrderStartedEvent) error {
 
 func (p *Projection) handleServiceTypeSetEvent(e *event.OrderServiceTypeSetEvent) error {
 	fmt.Printf("Handling projection for OrderServiceTypeSetEvent: %+v", e)
-	return nil
+
+	return p.repo.Patch(e.OrderID, map[string]interface{}{
+		"serviceType": e.ServiceType,
+	})
 }

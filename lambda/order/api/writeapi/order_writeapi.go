@@ -37,7 +37,7 @@ func init() {
 
 func main() {
 	router := httprouter.New()
-	router.POST("/toggle/:orderID", toggleOrder)
+	router.POST("/orders/:orderID/toggle", toggleOrder)
 	router.POST("/orders", startOrder)
 	log.Fatal(gateway.ListenAndServe(":3000", router))
 }

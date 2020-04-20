@@ -6,15 +6,19 @@ OrderWriteApi:
       - ./.bin/order_writeapi
   events:
     - http:
-        path: '{proxy+}'
+        path: '/orders'
         method: post
         cors: true
     - http:
-        path: '{proxy+}'
+        path: '/orders/{proxy+}'
+        method: post
+        cors: true
+    - http:
+        path: '/orders/{proxy+}'
         method: put
         cors: true
     - http:
-        path: '{proxy+}'
+        path: '/orders/{proxy+}'
         method: delete
         cors: true
   environment:
@@ -39,7 +43,11 @@ OrderReadApi:
       - ./.bin/order_readapi
   events:
     - http:
-        path: '{proxy+}'
+        path: '/orders'
+        method: get
+        cors: true
+    - http:
+        path: '/orders/{proxy+}'
         method: get
         cors: true
   environment:
