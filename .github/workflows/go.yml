@@ -58,6 +58,9 @@ jobs:
           name: lambdas
           path: .bin
 
+      - name: Configure Lambda Permissions
+        run: chmod +x ./.bin/*
+
       - name: Setup Node
         uses: actions/setup-node@v1
 
