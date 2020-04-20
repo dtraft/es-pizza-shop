@@ -1,4 +1,4 @@
-name: Build/Deploy
+name: CI/CD
 
 on:
   push:
@@ -45,9 +45,9 @@ jobs:
         path: .bin
 
   deploy:
+    name: Deploy
     needs: build
     if: github.ref == 'refs/heads/master'
-    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
