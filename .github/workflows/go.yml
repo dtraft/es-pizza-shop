@@ -49,4 +49,9 @@ jobs:
 
     - name: Serverless Deployment
       if: github.ref == 'refs/heads/master'
-      run: npm run deploy
+      uses: serverless/github-action@master
+      with:
+        args: deploy --stage dev
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
