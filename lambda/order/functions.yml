@@ -1,6 +1,9 @@
 # Write API
 OrderWriteApi:
   handler: ./.bin/order_writeapi
+  package:
+    include:
+      - ./.bin/order_writeapi
   events:
     - http:
         path: '{proxy+}'
@@ -16,7 +19,7 @@ OrderWriteApi:
         cors: true
   environment:
     TABLE_NAME: !Ref EventsTable
-  iamRoleStatementsName: WriteApiRole-${opt:stage}
+  iamRoleStatementsName: OrderWriteApiRole-${opt:stage}
   iamRoleStatements:
     - Effect: Allow     
       Action:
@@ -31,6 +34,9 @@ OrderWriteApi:
 # Read API
 OrderReadApi:
   handler: ./.bin/order_readapi
+  package:
+    include:
+      - ./.bin/order_readapi
   events:
     - http:
         path: '{proxy+}'
@@ -38,7 +44,7 @@ OrderReadApi:
         cors: true
   environment:
     TABLE_NAME: !Ref OrderTable
-  iamRoleStatementsName: ReadApiRole-${opt:stage}
+  iamRoleStatementsName: OrderReadApiRole-${opt:stage}
   iamRoleStatements:
     - Effect: Allow     
       Action:
@@ -55,6 +61,9 @@ OrderReadApi:
 # Projection
 OrderProjection:
   handler: ./.bin/order_projection
+  package:
+    include:
+      - ./.bin/order_projection
   environment:
     TABLE_NAME: !Ref OrderTable
   events:

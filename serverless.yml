@@ -4,10 +4,9 @@ plugins:
   - serverless-iam-roles-per-function
 
 package:
+  individually: true
   exclude:
     - '**/**'
-  include:
-    - ./.bin/**
 
 provider:
   name: aws
