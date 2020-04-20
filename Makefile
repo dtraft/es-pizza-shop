@@ -1,9 +1,10 @@
-.PHONY: default api eventforwarder clean orderprojection
+default: clean writeapi readapi eventforwarder orderprojection
 
-default: clean api eventforwarder orderprojection
+writeapi:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/writeapi lambda/api/writeapi.go
 
-api:
-	env GOOS=linux go build -ldflags="-s -w"  -o .bin/api lambda/api/main.go
+readapi:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/readapi lambda/api/readapi.go
 
 eventforwarder:
 	env GOOS=linux go build -ldflags="-s -w"  -o .bin/eventforwarder lambda/infrastructure/eventforwarder.go

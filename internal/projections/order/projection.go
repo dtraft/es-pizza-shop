@@ -5,7 +5,7 @@ import (
 
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
+	. "forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -25,11 +25,6 @@ func NewProjection(db dynamodbiface.DynamoDBAPI, tableName string) *Projection {
 	}
 }
 
-type Order struct {
-	OrderID     string            `json:"orderId"`
-	ServiceType model.ServiceType `json:"serviceType"`
-}
-
 func (p *Projection) ApplyEvent(e es.Event) error {
 	switch d := e.Data.(type) {
 	case *event.OrderStartedEvent:
@@ -42,6 +37,10 @@ func (p *Projection) ApplyEvent(e es.Event) error {
 
 	return nil
 }
+
+/*
+ * Event Handlers
+ */
 
 func (p *Projection) handleOrderStartedEvent(e *event.OrderStartedEvent) error {
 	fmt.Printf("Handling projection for OrderStartedEvent: %+v", e)
@@ -56,6 +55,9 @@ func (p *Projection) handleServiceTypeSetEvent(e *event.OrderServiceTypeSetEvent
 	return nil
 }
 
+/*
+ * Internals
+ */
 func (p *Projection) save(order *Order) error {
 	av, err := dynamodbattribute.MarshalMap(order)
 	if err != nil {

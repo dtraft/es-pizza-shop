@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,8 +37,8 @@ func init() {
 
 func main() {
 	router := httprouter.New()
-	router.GET("/toggle/:orderID", toggleOrder)
-	router.GET("/start", startOrder)
+	router.POST("/toggle/:orderID", toggleOrder)
+	router.POST("/orders", startOrder)
 	log.Fatal(gateway.ListenAndServe(":3000", router))
 }
 
@@ -62,6 +63,21 @@ func startOrder(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 
-	fmt.Fprintf(w, "Order Started: $s", orderID)
-	return
+	jsonResponse(w, map[string]string{
+		"orderId": orderID,
+	})
+}
+
+/*
+ * Helpers
+ */
+
+func jsonResponse(w http.ResponseWriter, body interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 }

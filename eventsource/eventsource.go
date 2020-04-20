@@ -38,6 +38,10 @@ type Aggregate interface {
 	ApplyEvent(event Event) error
 }
 
+type Projection interface {
+	ApplyEvent(event Event) error
+}
+
 type EventStore interface {
 	SaveEvent(event Event) error
 	EventsForAggregate(aggregateID string) ([]Event, error)

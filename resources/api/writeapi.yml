@@ -1,12 +1,21 @@
-api:
-  handler: ./.bin/api
+WriteApi:
+  handler: ./.bin/writeapi
   events:
     - http:
         path: '{proxy+}'
-        method: any
+        method: post
+        cors: true
+    - http:
+        path: '{proxy+}'
+        method: put
+        cors: true
+    - http:
+        path: '{proxy+}'
+        method: delete
+        cors: true
   environment:
     TABLE_NAME: !Ref EventsTable
-  iamRoleStatementsName: api-role
+  iamRoleStatementsName: WriteApiRole-${opt:stage}
   iamRoleStatements:
     - Effect: Allow     
       Action:

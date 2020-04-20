@@ -17,7 +17,8 @@ provider:
 
 functions:
   # API
-  - ${file(resources/api/function.yml)}
+  - ${file(resources/api/readapi.yml)}
+  - ${file(resources/api/writeapi.yml)}
 
   # EventForwarder - stores events in repo and forward to SNS
   - ${file(resources/eventforwarder.yml)}
