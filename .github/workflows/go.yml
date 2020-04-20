@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Test and Build
     if: "!contains(github.event.head_commit.message, 'skip ci')"
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +35,9 @@ jobs:
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
+
+    - name: Run Unit Tests
+      run: go test ./...
 
     - name: Build Lambdas
       run: make

@@ -16,8 +16,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
-var repo = repository.NewRepository(dynamodb.New(session.New(), aws.NewConfig()), os.Getenv("TABLE_NAME"))
-var projection = order.NewProjection(repo)
+var repo *repository.Repository
+var projection es.Projection
+
+func init(){
+	repo = repository.NewRepository(dynamodb.New(session.New(), aws.NewConfig()), os.Getenv("TABLE_NAME"))
+	projection = order.NewProjection(repo)
+}
 
 func main() {
 	lambda.Start(HandleRequest)

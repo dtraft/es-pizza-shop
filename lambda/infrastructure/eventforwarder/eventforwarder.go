@@ -64,13 +64,13 @@ func HandleRequest(ctx context.Context, e DynamoEvent) error {
 
 			event := es.Event{}
 			if err := dynamodbattribute.UnmarshalMap(r.Change.NewImage, &event); err != nil {
-				fmt.Printf("Error decoding event from dynamodb: %s ", err)
+				log.Printf("Error decoding event from dynamodb: %s ", err)
 				return err
 			}
 
 			encoded, err := json.Marshal(event)
 			if err != nil {
-				fmt.Printf("Error encoding event to json: %s ", err)
+				log.Printf("Error encoding event to json: %s ", err)
 				return err
 			}
 
@@ -92,12 +92,12 @@ func HandleRequest(ctx context.Context, e DynamoEvent) error {
 					if aerr, ok := err.(awserr.Error); ok {
 						switch aerr.Code() {
 						default:
-							fmt.Printf("Error putting event to s3: %s.\n", aerr.Error())
+							log.Printf("Error putting event to s3: %s.\n", aerr.Error())
 						}
 					} else {
 						// Print the error, cast err to awserr.Error to get the Code and
 						// Message from an error.
-						fmt.Printf("Error putting event to s3: %s.\n", err.Error())
+						log.Printf("Error putting event to s3: %s.\n", err.Error())
 					}
 				}
 				wg.Done()
@@ -110,15 +110,15 @@ func HandleRequest(ctx context.Context, e DynamoEvent) error {
 					TopicArn: eventBus,
 					Message:  aws.String(string(encoded)),
 					MessageAttributes: map[string]*sns.MessageAttributeValue{
-						"eventType": &sns.MessageAttributeValue{
+						"eventType": {
 							DataType:    aws.String("String"),
 							StringValue: aws.String(event.EventType),
 						},
-						"eventVersion": &sns.MessageAttributeValue{
+						"eventVersion": {
 							DataType:    aws.String("Number"),
 							StringValue: aws.String(strconv.Itoa(event.EventTypeVersion)),
 						},
-						"eventId": &sns.MessageAttributeValue{
+						"eventId": {
 							DataType:    aws.String("String"),
 							StringValue: aws.String(event.EventID),
 						},
@@ -132,12 +132,12 @@ func HandleRequest(ctx context.Context, e DynamoEvent) error {
 					if aerr, ok := err.(awserr.Error); ok {
 						switch aerr.Code() {
 						default:
-							fmt.Printf("Error publishing event to sns: %s.\n", aerr.Error())
+							log.Printf("Error publishing event to sns: %s.\n", aerr.Error())
 						}
 					} else {
 						// Print the error, cast err to awserr.Error to get the Code and
 						// Message from an error.
-						fmt.Printf("Error publishing event to sns: %s.\n", err.Error())
+						log.Printf("Error publishing event to sns: %s.\n", err.Error())
 					}
 				}
 
