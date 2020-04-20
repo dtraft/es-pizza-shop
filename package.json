@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "Proof of Concept for cloud native event sourcing architecture",
   "dependencies": {
-    "serverless-iam-roles-per-function": "^2.0.2",
-    "serverless-dynamodb-local": "^0.2.39",
-    "serverless-go-plugin": "^2.0.0",
-    "serverless-localstack": "^0.4.24",
-    "serverless-offline": "^6.1.4"
+    "serverless": "^1.67.3",
+    "serverless-iam-roles-per-function": "^2.0.2"
+  },
+  "scripts": {
+    "deploy": "serverless deploy --stage dev"
   },
   "devDependencies": {},
   "author": "Drew Trafton",
