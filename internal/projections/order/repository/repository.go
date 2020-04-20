@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"fmt"
 	"log"
+	"strings"
 
 	. "forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
 	"github.com/aws/aws-sdk-go/aws"
@@ -45,18 +47,70 @@ func (r *Repository) Save(order *Order) error {
 	return err
 }
 
-func (r *Repository) Patch(orderId string, updates map[string]interface{}) error {
+func (r *Repository) Patch(orderID string, updates map[string]interface{}) error {
 
-	// av, err := dynamodbattribute.MarshalMap(order)
-	// if err != nil {
-	// 	return err
-	// }
+	vals := make(map[string]*dynamodb.AttributeValue)
 
-	// _, err = p.db.PutItem(&dynamodb.PutItemInput{
-	// 	TableName: p.tableName,
-	// 	Item:      av,
-	// })
-	// return err
+	if err := patchHelper(updates, "", vals); err != nil {
+		return err
+	}
+
+	names := make(map[string]*string)
+	values := make(map[string]*dynamodb.AttributeValue)
+	var expressions []string
+	for name, value := range vals {
+		keys := strings.Split(name, ".")
+		valueKey := ":" + strings.Join(keys, "")
+		for i, key := range keys {
+			keys[i] = "#" + key
+			names[keys[i]] = aws.String(key)
+		}
+		nameKey := strings.Join(keys, ".")
+		values[valueKey] = value
+
+		expressions = append(expressions, fmt.Sprintf("%s = %s", nameKey, valueKey))
+	}
+
+	exp := "SET " + strings.Join(expressions, ", ")
+
+	i := &dynamodb.UpdateItemInput{
+		TableName: r.tableName,
+		Key: map[string]*dynamodb.AttributeValue{
+			"orderId": {S: aws.String(orderID)},
+		},
+		ExpressionAttributeValues: values,
+		ExpressionAttributeNames:  names,
+		UpdateExpression:          aws.String(exp),
+	}
+
+	log.Printf("Update item request: %+v", i)
+
+	if _, err := r.db.UpdateItem(i); err != nil {
+		return err
+	}
+	return nil
+}
+
+func patchHelper(update interface{}, path string, vals map[string]*dynamodb.AttributeValue) error {
+	switch u := update.(type) {
+	case map[string]interface{}:
+		for key, value := range u {
+			nestedPath := path
+			if nestedPath != "" {
+				nestedPath += "."
+			}
+			nestedPath += key
+			if err := patchHelper(value, nestedPath, vals); err != nil {
+				return err
+			}
+		}
+	default:
+		a, err := dynamodbattribute.Marshal(update)
+		if err != nil {
+			return err
+		}
+		vals[path] = a
+	}
 	return nil
 }
 

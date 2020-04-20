@@ -6,6 +6,7 @@ require (
 	github.com/apex/gateway v1.1.1
 	github.com/aws/aws-lambda-go v1.16.0
 	github.com/aws/aws-sdk-go v1.30.7
+	github.com/go-test/deep v1.0.5
 	github.com/google/go-cmp v0.4.0
 	github.com/google/uuid v1.1.1
 	github.com/julienschmidt/httprouter v1.3.0
