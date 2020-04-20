@@ -11,7 +11,6 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-
     - name: Set up Go 1.14
       uses: actions/setup-go@v1
       with:
@@ -39,19 +38,35 @@ jobs:
     - name: Build Lambdas
       run: make
 
-    - name: Setup Node
+    - uses: actions/upload-artifact@v1
       if: github.ref == 'refs/heads/master'
-      uses: actions/setup-node@v1
-
-    - name: Install Serverless Dependencies
-      if: github.ref == 'refs/heads/master'
-      run: npm ci
-
-    - name: Serverless Deployment
-      if: github.ref == 'refs/heads/master'
-      uses: serverless/github-action@v1.54.0
       with:
-        args: deploy --stage dev
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        name: lambdas
+        path: .bin
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/master'
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: actions/download-artifact@v1
+        with:
+          name: lambdas
+          path: .bin
+
+      - name: Setup Node
+        uses: actions/setup-node@v1
+
+      - name: Install Serverless Dependencies
+        run: npm ci
+
+      - name: Serverless Deployment
+        uses: serverless/github-action@v1.54.0
+        with:
+          args: deploy --stage dev
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
