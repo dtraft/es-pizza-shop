@@ -1,4 +1,4 @@
-name: Build
+name: Build/Deploy
 
 on:
   push:
@@ -49,7 +49,7 @@ jobs:
 
     - name: Serverless Deployment
       if: github.ref == 'refs/heads/master'
-      uses: serverless/github-action@master
+      uses: serverless/github-action@v1.54.0
       with:
         args: deploy --stage dev
       env:
