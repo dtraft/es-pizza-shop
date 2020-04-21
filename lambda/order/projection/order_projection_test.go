@@ -46,7 +46,7 @@ func TestHandleEvent(t *testing.T) {
 							"eventTimestamp":"2020-04-19T19:45:11.475995951Z",
 							"eventData":{
 								"orderId":"84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
-								"serviceType":0
+								"serviceType":1
 							}
 						}
 					`,

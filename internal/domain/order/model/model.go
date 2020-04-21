@@ -4,6 +4,6 @@ package model
 type ServiceType int
 
 const (
-	Pickup ServiceType = iota
+	Pickup ServiceType = iota + 1
 	Delivery
 )

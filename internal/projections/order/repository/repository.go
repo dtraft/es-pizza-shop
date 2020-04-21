@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"sort"
@@ -15,7 +16,7 @@ import (
 
 type Interface interface {
 	Save(order *Order) error
-	Patch(orderID string, updates map[string]interface{}) error
+	Patch(orderID string, updates *Order) error
 }
 
 // The Repository provides a way to persist and retrieve entities from permanent storage
@@ -48,7 +49,15 @@ func (r *Repository) Save(order *Order) error {
 	return err
 }
 
-func (r *Repository) Patch(orderID string, updates map[string]interface{}) error {
+func (r *Repository) Patch(orderID string, order *Order) error {
+
+	// Convert order to updates map with correct keys
+	var updates map[string]interface{}
+	temp, err := json.Marshal(order)
+	if err != nil {
+		return err
+	}
+	json.Unmarshal(temp, &updates)
 
 	vals := make(map[string]*dynamodb.AttributeValue)
 
@@ -94,6 +103,36 @@ func (r *Repository) Patch(orderID string, updates map[string]interface{}) error
 	return nil
 }
 
+
+/*
+ * Query Handlers
+ */
+
+// QueryAllOrders retrieves a list of all orders, sorted in random order
+func (r *Repository) QueryAllOrders() ([]Order, error) {
+
+	result, err := r.db.Scan(&dynamodb.ScanInput{
+		TableName: r.tableName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Raw Orders: %+v", result.Items)
+
+	orders := []Order{}
+	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &orders); err != nil {
+		return nil, err
+	}
+
+	return orders, nil
+}
+
+
+/*
+ * Utils
+ */
+
 func patchHelper(update interface{}, path string, vals map[string]*dynamodb.AttributeValue) error {
 	switch u := update.(type) {
 	case map[string]interface{}:
@@ -128,26 +167,3 @@ func sortedKeys(m map[string]*dynamodb.AttributeValue) []string {
 	return keys
 }
 
-/*
- * Query Handlers
- */
-
-// QueryAllOrders retrieves a list of all orders, sorted in random order
-func (r *Repository) QueryAllOrders() ([]Order, error) {
-
-	result, err := r.db.Scan(&dynamodb.ScanInput{
-		TableName: r.tableName,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	log.Printf("Raw Orders: %+v", result.Items)
-
-	orders := []Order{}
-	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &orders); err != nil {
-		return nil, err
-	}
-
-	return orders, nil
-}

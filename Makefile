@@ -14,6 +14,10 @@ order_readapi:
 order_projection:
 	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_projection lambda/order/projection/order_projection.go
 
+# Tests
+test:
+	go test ./...
+
 # Utils
 clean: 
 	rm -rf .bin/*

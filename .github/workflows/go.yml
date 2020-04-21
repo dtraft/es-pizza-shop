@@ -37,7 +37,7 @@ jobs:
         fi
 
     - name: Run Unit Tests
-      run: go test ./...
+      run: make test
 
     - name: Build Lambdas
       run: make
