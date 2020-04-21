@@ -39,11 +39,9 @@ jobs:
     - name: Run Unit Tests
       run: make test
 
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
+    - uses: shogo82148/actions-goveralls@v1
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: ./coverage.info
+        path-to-profile: coverage.out
 
     - name: Build Lambdas
       if: github.ref == 'refs/heads/master'
