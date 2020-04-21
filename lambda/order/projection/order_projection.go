@@ -19,7 +19,7 @@ import (
 var repo *repository.Repository
 var projection es.Projection
 
-func init(){
+func init() {
 	repo = repository.NewRepository(dynamodb.New(session.New(), aws.NewConfig()), os.Getenv("TABLE_NAME"))
 	projection = order.NewProjection(repo)
 }

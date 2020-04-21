@@ -103,7 +103,6 @@ func (r *Repository) Patch(orderID string, order *Order) error {
 	return nil
 }
 
-
 /*
  * Query Handlers
  */
@@ -127,7 +126,6 @@ func (r *Repository) QueryAllOrders() ([]Order, error) {
 
 	return orders, nil
 }
-
 
 /*
  * Utils
@@ -166,4 +164,3 @@ func sortedKeys(m map[string]*dynamodb.AttributeValue) []string {
 	sort.Strings(keys)
 	return keys
 }
-
