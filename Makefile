@@ -16,7 +16,7 @@ order_projection:
 
 # Tests
 test:
-	go test ./...
+	go test ./... -cover -race -coverprofile=coverage.info
 
 # Utils
 clean: 
