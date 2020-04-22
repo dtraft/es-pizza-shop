@@ -18,6 +18,10 @@ order_projection:
 test:
 	go test ./... -cover -race -coverprofile=coverage.out
 
+# Coverage
+coverage: test
+	go tool cover -html=coverage.out
+
 # Utils
 clean: 
 	rm -rf .bin/*

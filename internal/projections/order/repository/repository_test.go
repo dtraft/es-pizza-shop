@@ -2,16 +2,17 @@ package repository
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"testing"
+
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 	. "forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"github.com/go-test/deep"
-	"io/ioutil"
-	"log"
-	"os"
-	"testing"
 )
 
 var mockTable = "test"
@@ -57,42 +58,6 @@ func TestRepository_Patch(t *testing.T) {
 		}
 	}
 }
-
-//
-//func TestPatchHelper(t *testing.T) {
-//
-//	cases := []struct {
-//		Updates  interface{}
-//		Expected map[string]*dynamodb.AttributeValue
-//	}{
-//		{
-//			Updates: map[string]interface{}{
-//				"test": "me",
-//				"nested": map[string]interface{}{
-//					"test":    "4u",
-//					"another": "4us",
-//				},
-//			},
-//			Expected: map[string]*dynamodb.AttributeValue{
-//				"test":           {S: aws.String("me")},
-//				"nested.test":    {S: aws.String("4u")},
-//				"nested.another": {S: aws.String("4us")},
-//			},
-//		},
-//	}
-//
-//	for _, c := range cases {
-//		vals := make(map[string]*dynamodb.AttributeValue)
-//
-//		if err := patchHelper(c.Updates, "", vals); err != nil {
-//			t.Error(err)
-//		}
-//		if diff := deep.Equal(c.Expected, vals); diff != nil {
-//			t.Error(diff)
-//		}
-//	}
-//
-//}
 
 type mockDynamoDb struct {
 	dynamodbiface.DynamoDBAPI
