@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
-	"github.com/go-test/deep"
 	"io/ioutil"
 	"log"
 	"os"
 	"testing"
 	"time"
+
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
+	"github.com/go-test/deep"
 
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"github.com/aws/aws-lambda-go/events"
@@ -24,7 +25,7 @@ func TestMain(m *testing.M) {
 func TestHandleEvent(t *testing.T) {
 
 	cases := []struct {
-		Record events.SNSEventRecord
+		Record   events.SNSEventRecord
 		Expected []es.Event
 	}{
 		{
@@ -54,14 +55,14 @@ func TestHandleEvent(t *testing.T) {
 			},
 			Expected: []es.Event{
 				{
-					EventID: "6c4539e3-ae1b-44f0-bfc2-4d7531893136",
-					AggregateID: "84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
-					AggregateType: "OrderAggregate",
+					EventID:          "6c4539e3-ae1b-44f0-bfc2-4d7531893136",
+					AggregateID:      "84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
+					AggregateType:    "OrderAggregate",
 					EventTypeVersion: 1,
-					EventType: "OrderStartedEvent",
-					Timestamp: time.Date(2020, 04, 19, 19, 45, 11, 475995951, time.UTC),
+					EventType:        "OrderStartedEvent",
+					Timestamp:        time.Date(2020, 04, 19, 19, 45, 11, 475995951, time.UTC),
 					Data: &event.OrderStartedEvent{
-						OrderID: "84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
+						OrderID:     "84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
 						ServiceType: model.Pickup,
 					},
 				},
@@ -82,10 +83,10 @@ func TestHandleEvent(t *testing.T) {
 
 type mockProjection struct {
 	Expected []es.Event
-	index int
+	index    int
 }
 
-func (m *mockProjection) ApplyEvent(event es.Event) error {
+func (m *mockProjection) HandleEvent(event es.Event) error {
 	expected := m.Expected[m.index]
 	m.index++
 

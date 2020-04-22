@@ -19,7 +19,7 @@ import (
 var repo *repository.Repository
 var projection es.Projection
 
-func init(){
+func init() {
 	repo = repository.NewRepository(dynamodb.New(session.New(), aws.NewConfig()), os.Getenv("TABLE_NAME"))
 	projection = order.NewProjection(repo)
 }
@@ -50,7 +50,7 @@ func handleEvent(r events.SNSEventRecord) error {
 	}
 
 	// Handle projection
-	if err := projection.ApplyEvent(event); err != nil {
+	if err := projection.HandleEvent(event); err != nil {
 		return fmt.Errorf("Error handling event with payload: %+v, details: %s", event, err)
 	}
 

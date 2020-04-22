@@ -2,6 +2,7 @@ package order
 
 import (
 	"fmt"
+	"log"
 
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
@@ -20,7 +21,7 @@ func NewProjection(repo repository.Interface) *Projection {
 	}
 }
 
-func (p *Projection) ApplyEvent(e es.Event) error {
+func (p *Projection) HandleEvent(e es.Event) error {
 	switch d := e.Data.(type) {
 	case *event.OrderStartedEvent:
 		return p.handleOrderStartedEvent(d)
@@ -36,15 +37,16 @@ func (p *Projection) ApplyEvent(e es.Event) error {
  */
 
 func (p *Projection) handleOrderStartedEvent(e *event.OrderStartedEvent) error {
-	fmt.Printf("Handling projection for OrderStartedEvent: %+v", e)
+	log.Printf("Handling projection for OrderStartedEvent: %+v", e)
 	return p.repo.Save(&Order{
 		OrderID:     e.OrderID,
 		ServiceType: e.ServiceType,
+		Description: e.Description,
 	})
 }
 
 func (p *Projection) handleServiceTypeSetEvent(e *event.OrderServiceTypeSetEvent) error {
-	fmt.Printf("Handling projection for OrderServiceTypeSetEvent: %+v", e)
+	log.Printf("Handling projection for OrderServiceTypeSetEvent: %+v", e)
 
 	return p.repo.Patch(e.OrderID, &Order{
 		ServiceType: e.ServiceType,

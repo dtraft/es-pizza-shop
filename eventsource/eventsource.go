@@ -34,12 +34,12 @@ type Aggregate interface {
 	Init(aggregateID string)
 	AggregateID() string
 	Type() string
-	HandleCommand(comand Command) ([]Event, error)
+	HandleCommand(command Command) ([]Event, error)
 	ApplyEvent(event Event) error
 }
 
 type Projection interface {
-	ApplyEvent(event Event) error
+	HandleEvent(event Event) error
 }
 
 type EventStore interface {
