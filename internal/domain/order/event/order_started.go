@@ -2,7 +2,6 @@ package event
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
@@ -17,6 +16,7 @@ func init() {
 type OrderStartedEvent struct {
 	OrderID     string            `json:"orderId"`
 	ServiceType model.ServiceType `json:"serviceType"`
+	Description string            `json:"description"`
 }
 
 func (e *OrderStartedEvent) Version() int {
@@ -33,7 +33,7 @@ func (e *OrderStartedEvent) Load(data json.RawMessage, version int) error {
 
 	default:
 		_, eventType := eventsource.GetTypeName(e)
-		return errors.New(fmt.Sprintf("Version %d is not supported by %s", version, eventType))
+		return fmt.Errorf("Version %d is not supported by %s", version, eventType)
 	}
 	return nil
 }

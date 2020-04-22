@@ -34,7 +34,7 @@ type Aggregate interface {
 	Init(aggregateID string)
 	AggregateID() string
 	Type() string
-	HandleCommand(comand Command) ([]Event, error)
+	HandleCommand(command Command) ([]Event, error)
 	ApplyEvent(event Event) error
 }
 

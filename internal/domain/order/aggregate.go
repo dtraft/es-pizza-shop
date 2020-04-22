@@ -27,6 +27,7 @@ func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.Ev
 		event := &OrderStartedEvent{
 			OrderID:     c.OrderID,
 			ServiceType: c.Type,
+			Description: c.Description,
 		}
 		return []eventsource.Event{eventsource.NewEvent(a, event)}, nil
 	case *ToggleOrderServiceTypeCommand:
