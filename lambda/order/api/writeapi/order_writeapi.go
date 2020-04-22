@@ -22,9 +22,19 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var orderSvc *order.Service
-
+var router *httprouter.Router
 var validate *validator.Validate
+
+var controller *Controller
+
+type Controller struct {
+	orderSvc order.ServiceAPI
+}
+
+func (c *Controller) registerRoutes(router *httprouter.Router) {
+	router.POST("/orders/:orderID/toggle", c.toggleOrder)
+	router.POST("/orders", c.startOrder)
+}
 
 func init() {
 	var svc *dynamodb.DynamoDB
@@ -37,23 +47,27 @@ func init() {
 
 	store := ddbES.New(svc, os.Getenv("TABLE_NAME"))
 	es := eventsource.New(store)
+	orderSvc := order.NewService(es)
 
-	orderSvc = order.NewService(es)
+	controller = &Controller{
+		orderSvc: orderSvc,
+	}
+
 	validate = validator.New()
+
+	router = httprouter.New()
+	controller.registerRoutes(router)
 }
 
 func main() {
-	router := httprouter.New()
-	router.POST("/orders/:orderID/toggle", toggleOrder)
-	router.POST("/orders", startOrder)
 	log.Fatal(gateway.ListenAndServe(":3000", router))
 }
 
-func toggleOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func (c *Controller) toggleOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	orderID := p.ByName("orderID")
 
-	if err := orderSvc.ToggleOrderServiceType(orderID); err != nil {
-		http.Error(w, err.Error(), 500)
+	if err := c.orderSvc.ToggleOrderServiceType(orderID); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -61,25 +75,26 @@ func toggleOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	return
 }
 
-func startOrder(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func (c *Controller) startOrder(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var resource *orderResource
+	err := json.NewDecoder(r.Body).Decode(&resource)
 
-	var order *orderResource
-	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	if err := validate.Struct(order); err != nil {
-
+	if err := validate.Struct(resource); err != nil {
+		invalidResponse(w, err)
+		return
 	}
-	orderID, err := orderSvc.StartOrder(order.toOrder())
+
+	orderID, err := c.orderSvc.StartOrder(resource.toOrder())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	order.OrderID = orderID
-	jsonResponse(w, order)
+	resource.OrderID = orderID
+	jsonResponse(w, resource)
 }
 
 /*

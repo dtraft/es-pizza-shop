@@ -7,6 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type ServiceAPI interface {
+	StartOrder(order *model.Order) (string, error)
+	ToggleOrderServiceType(orderID string) error
+}
+
 type Service struct {
 	eventSource eventsource.EventSource
 }
