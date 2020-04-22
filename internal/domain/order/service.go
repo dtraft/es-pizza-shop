@@ -21,10 +21,14 @@ func NewService(eventSource eventsource.EventSource) *Service {
 	}
 }
 
-func (s *Service) StartOrder() (string, error) {
+func (s *Service) StartOrder(order *model.Order) (string, error) {
+	if order.OrderID == "" {
+		order.OrderID = uuid.New().String()
+	}
 	c := &command.StartOrderCommand{
-		OrderID: uuid.New().String(),
-		Type:    model.Pickup,
+		OrderID:     order.OrderID,
+		Type:        order.ServiceType,
+		Description: order.Description,
 	}
 
 	if err := s.processCommand(c); err != nil {

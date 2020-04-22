@@ -7,3 +7,9 @@ const (
 	Pickup ServiceType = iota + 1
 	Delivery
 )
+
+type Order struct {
+	OrderID     string      `json:"orderId"`
+	ServiceType ServiceType `json:"serviceType"`
+	Description string      `json:"description"`
+}
