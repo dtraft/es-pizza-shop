@@ -39,7 +39,7 @@ type Aggregate interface {
 }
 
 type Projection interface {
-	ApplyEvent(event Event) error
+	HandleEvent(event Event) error
 }
 
 type EventStore interface {

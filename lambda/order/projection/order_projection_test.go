@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
-	"github.com/go-test/deep"
 	"io/ioutil"
 	"log"
 	"os"
 	"testing"
 	"time"
+
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
+	"github.com/go-test/deep"
 
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"github.com/aws/aws-lambda-go/events"
@@ -85,7 +86,7 @@ type mockProjection struct {
 	index    int
 }
 
-func (m *mockProjection) ApplyEvent(event es.Event) error {
+func (m *mockProjection) HandleEvent(event es.Event) error {
 	expected := m.Expected[m.index]
 	m.index++
 

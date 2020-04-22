@@ -50,7 +50,7 @@ func handleEvent(r events.SNSEventRecord) error {
 	}
 
 	// Handle projection
-	if err := projection.ApplyEvent(event); err != nil {
+	if err := projection.HandleEvent(event); err != nil {
 		return fmt.Errorf("Error handling event with payload: %+v, details: %s", event, err)
 	}
 
