@@ -63,24 +63,12 @@ func main() {
 	log.Fatal(gateway.ListenAndServe(":3000", router))
 }
 
-func (c *Controller) toggleOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	orderID := p.ByName("orderID")
-
-	if err := c.orderSvc.ToggleOrderServiceType(orderID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	fmt.Fprint(w, "Order toggled.")
-	return
-}
-
 func (c *Controller) startOrder(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var resource *orderResource
 	err := json.NewDecoder(r.Body).Decode(&resource)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errorResponse(w, err, http.StatusBadRequest)
 		return
 	}
 	if err := validate.Struct(resource); err != nil {
@@ -90,11 +78,48 @@ func (c *Controller) startOrder(w http.ResponseWriter, r *http.Request, _ httpro
 
 	orderID, err := c.orderSvc.StartOrder(resource.toOrder())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errorResponse(w, err, http.StatusBadRequest)
 		return
 	}
 	resource.OrderID = orderID
-	jsonResponse(w, resource)
+	jsonResponse(w, &response{
+		OK:     true,
+		Result: resource,
+	})
+}
+
+func (c *Controller) updateOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	orderID := p.ByName("orderID")
+
+	var resource *orderResource
+	err := json.NewDecoder(r.Body).Decode(&resource)
+	if err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+	resource.OrderID = orderID
+
+	if err := c.orderSvc.UpdateOrder(resource.toOrder()); err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	jsonResponse(w, &response{
+		OK:     true,
+		Result: resource,
+	})
+}
+
+func (c *Controller) toggleOrder(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
+	orderID := p.ByName("orderID")
+
+	if err := c.orderSvc.ToggleOrderServiceType(orderID); err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	fmt.Fprint(w, "Order toggled.")
+	return
 }
 
 /*
@@ -114,8 +139,6 @@ func (o *orderResource) toOrder() *model.Order {
 		Description: o.Description,
 	}
 }
-
-// func (o *OrderResource) validate
 
 /*
  * Helpers
@@ -147,7 +170,7 @@ func invalidResponse(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
 
-	resp := &errorResponse{
+	resp := &response{
 		OK:     false,
 		Errors: errors,
 	}
@@ -158,8 +181,24 @@ func invalidResponse(w http.ResponseWriter, err error) {
 	}
 }
 
-type errorResponse struct {
+func errorResponse(w http.ResponseWriter, err error, code int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+
+	resp := &response{
+		OK:     false,
+		Result: err.Error(),
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+type response struct {
 	OK     bool               `json:"ok"`
+	Result interface{}        `json:"result"`
 	Errors []*validationError `json:"errors"`
 }
 

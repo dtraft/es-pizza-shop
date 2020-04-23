@@ -1,6 +1,8 @@
 package order
 
 import (
+	"fmt"
+
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/command"
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
@@ -10,6 +12,7 @@ import (
 type ServiceAPI interface {
 	StartOrder(order *model.Order) (string, error)
 	ToggleOrderServiceType(orderID string) error
+	UpdateOrder(order *model.Order) error
 }
 
 type Service struct {
@@ -41,6 +44,24 @@ func (s *Service) StartOrder(order *model.Order) (string, error) {
 	}
 
 	return c.OrderID, nil
+}
+
+func (s *Service) UpdateOrder(order *model.Order) error {
+	if order.OrderID == "" {
+		return fmt.Errorf("OrderID must be provided to update operation.")
+	}
+
+	c := &command.UpdateOrderCommand{
+		OrderID:     order.OrderID,
+		ServiceType: order.ServiceType,
+		Description: order.Description,
+	}
+
+	if err := s.processCommand(c); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Service) ToggleOrderServiceType(orderID string) error {

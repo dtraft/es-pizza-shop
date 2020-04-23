@@ -22,6 +22,12 @@ var toggleServiceType = &command.ToggleOrderServiceTypeCommand{
 	OrderID: "testOrderId",
 }
 
+var updateOrderCommand = &command.UpdateOrderCommand{
+	OrderID:     "testOrderId",
+	Description: "Here is a NEW description",
+	ServiceType: model.Delivery,
+}
+
 var orderStartedEvent = &event.OrderStartedEvent{
 	OrderID:     "testOrderId",
 	Description: "Here is a description",
@@ -31,6 +37,11 @@ var orderStartedEvent = &event.OrderStartedEvent{
 var serviceTypeSetEvent = &event.OrderServiceTypeSetEvent{
 	OrderID:     "testOrderId",
 	ServiceType: model.Delivery,
+}
+
+var descriptionSetEvent = &event.OrderDescriptionSet{
+	OrderID:     "testOrderId",
+	Description: "Here is a NEW description",
 }
 
 func TestAggregate_HandleCommand(t *testing.T) {
@@ -51,6 +62,26 @@ func TestAggregate_HandleCommand(t *testing.T) {
 				serviceTypeSetEvent,
 			},
 		},
+		{
+			Given: []eventsource.EventData{
+				orderStartedEvent,
+			},
+			Command: updateOrderCommand,
+			Expected: []eventsource.EventData{
+				serviceTypeSetEvent,
+				descriptionSetEvent,
+			},
+		},
+		{
+			Given: []eventsource.EventData{
+				orderStartedEvent,
+				serviceTypeSetEvent,
+			},
+			Command: updateOrderCommand,
+			Expected: []eventsource.EventData{
+				descriptionSetEvent,
+			},
+		},
 	}
 
 	for i, c := range cases {
@@ -67,6 +98,7 @@ func TestAggregate_ApplyEvent(t *testing.T) {
 			Event: orderStartedEvent,
 			Expected: &Aggregate{
 				ServiceType: model.Pickup,
+				Description: "Here is a description",
 			},
 		},
 		{
@@ -76,6 +108,7 @@ func TestAggregate_ApplyEvent(t *testing.T) {
 			Event: serviceTypeSetEvent,
 			Expected: &Aggregate{
 				ServiceType: model.Delivery,
+				Description: "Here is a description",
 			},
 		},
 	}
