@@ -54,3 +54,5 @@ func (s *Service) ToggleOrderServiceType(orderID string) error {
 
 	return nil
 }
+
+var _ ServiceAPI = (*Service)(nil)

@@ -159,11 +159,11 @@ func invalidResponse(w http.ResponseWriter, err error) {
 }
 
 type errorResponse struct {
-	OK     bool `json:"ok"`
-	Errors []*validationError
+	OK     bool               `json:"ok"`
+	Errors []*validationError `json:"errors"`
 }
 
 type validationError struct {
-	Field   string
-	Message string
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }
