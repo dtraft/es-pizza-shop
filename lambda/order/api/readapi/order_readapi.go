@@ -72,7 +72,7 @@ func resourceFromOrder(o *model.Order) *orderResource {
  */
 
 func jsonResponse(w http.ResponseWriter, body interface{}) {
-	w.Header().Set("Content-ServiceType", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(body); err != nil {
