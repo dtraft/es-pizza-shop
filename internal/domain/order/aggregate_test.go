@@ -3,6 +3,8 @@ package order
 import (
 	"testing"
 
+	"github.com/markphelps/optional"
+
 	"github.com/go-test/deep"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
@@ -15,17 +17,19 @@ import (
 var startOrderCommand = &command.StartOrderCommand{
 	OrderID:     "testOrderId",
 	Description: "Here is a description",
-	Type:        model.Pickup,
-}
-
-var toggleServiceType = &command.ToggleOrderServiceTypeCommand{
-	OrderID: "testOrderId",
+	ServiceType: model.Pickup,
 }
 
 var updateOrderCommand = &command.UpdateOrderCommand{
 	OrderID:     "testOrderId",
-	Description: "Here is a NEW description",
-	ServiceType: model.Delivery,
+	Description: optional.NewString("Here is a NEW description"),
+	ServiceType: model.NewOptionalServiceType(model.Delivery),
+}
+
+var updateOrderCommandNoUpdates = &command.UpdateOrderCommand{
+	OrderID:     "testOrderId",
+	Description: optional.NewString("Here is a description"),
+	ServiceType: model.OptionalServiceType{},
 }
 
 var orderStartedEvent = &event.OrderStartedEvent{
@@ -57,15 +61,6 @@ func TestAggregate_HandleCommand(t *testing.T) {
 			Given: []eventsource.EventData{
 				orderStartedEvent,
 			},
-			Command: toggleServiceType,
-			Expected: []eventsource.EventData{
-				serviceTypeSetEvent,
-			},
-		},
-		{
-			Given: []eventsource.EventData{
-				orderStartedEvent,
-			},
 			Command: updateOrderCommand,
 			Expected: []eventsource.EventData{
 				serviceTypeSetEvent,
@@ -81,11 +76,18 @@ func TestAggregate_HandleCommand(t *testing.T) {
 			Expected: []eventsource.EventData{
 				descriptionSetEvent,
 			},
+		},
+		{
+			Given: []eventsource.EventData{
+				orderStartedEvent,
+			},
+			Command:  updateOrderCommandNoUpdates,
+			Expected: []eventsource.EventData{},
 		},
 	}
 
 	for i, c := range cases {
-		if err := c.HandleCommand(&Aggregate{}); err != nil {
+		if err := c.TestHandleCommand(&Aggregate{}); err != nil {
 			t.Errorf("Error is cases[%d]: %s", i, err)
 		}
 	}
@@ -111,10 +113,20 @@ func TestAggregate_ApplyEvent(t *testing.T) {
 				Description: "Here is a description",
 			},
 		},
+		{
+			Given: []eventsource.EventData{
+				orderStartedEvent,
+			},
+			Event: descriptionSetEvent,
+			Expected: &Aggregate{
+				ServiceType: model.Pickup,
+				Description: "Here is a NEW description",
+			},
+		},
 	}
 
 	for i, c := range cases {
-		if err := c.ApplyEvent(&Aggregate{}); err != nil {
+		if err := c.TestApplyEvent(&Aggregate{}); err != nil {
 			t.Errorf("Error is cases[%d]: %s", i, err)
 		}
 	}

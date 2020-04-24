@@ -28,7 +28,7 @@ func (p *Projection) HandleEvent(e es.Event) error {
 	case *event.OrderServiceTypeSetEvent:
 		return p.handleServiceTypeSetEvent(d)
 	default:
-		return fmt.Errorf("Unsupported event %s received in ApplyEvent handler of the Order Projection: %+v", d, e)
+		return fmt.Errorf("Unsupported event %s received in TestApplyEvent handler of the Order Projection: %+v", d, e)
 	}
 }
 

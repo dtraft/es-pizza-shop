@@ -11,19 +11,18 @@ import (
 
 type ServiceAPI interface {
 	StartOrder(order *model.Order) (string, error)
-	ToggleOrderServiceType(orderID string) error
-	UpdateOrder(order *model.Order) error
+	UpdateOrder(order *model.OrderPatch) error
 }
 
 type Service struct {
-	eventSource eventsource.EventSource
+	eventSource eventsource.EventSourceAPI
 }
 
 func (s *Service) processCommand(c eventsource.Command) error {
 	return s.eventSource.ProcessCommand(c, &Aggregate{})
 }
 
-func NewService(eventSource eventsource.EventSource) *Service {
+func NewService(eventSource eventsource.EventSourceAPI) *Service {
 	return &Service{
 		eventSource: eventSource,
 	}
@@ -33,9 +32,10 @@ func (s *Service) StartOrder(order *model.Order) (string, error) {
 	if order.OrderID == "" {
 		order.OrderID = uuid.New().String()
 	}
+
 	c := &command.StartOrderCommand{
 		OrderID:     order.OrderID,
-		Type:        order.ServiceType,
+		ServiceType: order.ServiceType,
 		Description: order.Description,
 	}
 
@@ -46,7 +46,7 @@ func (s *Service) StartOrder(order *model.Order) (string, error) {
 	return c.OrderID, nil
 }
 
-func (s *Service) UpdateOrder(order *model.Order) error {
+func (s *Service) UpdateOrder(order *model.OrderPatch) error {
 	if order.OrderID == "" {
 		return fmt.Errorf("OrderID must be provided to update operation.")
 	}
@@ -55,18 +55,6 @@ func (s *Service) UpdateOrder(order *model.Order) error {
 		OrderID:     order.OrderID,
 		ServiceType: order.ServiceType,
 		Description: order.Description,
-	}
-
-	if err := s.processCommand(c); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Service) ToggleOrderServiceType(orderID string) error {
-	c := &command.ToggleOrderServiceTypeCommand{
-		OrderID: orderID,
 	}
 
 	if err := s.processCommand(c); err != nil {

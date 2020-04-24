@@ -1,15 +1,15 @@
 package model
 
-// ServiceType is the type of order, e.g. pickup or delivery
-type ServiceType int
-
-const (
-	Pickup ServiceType = iota + 1
-	Delivery
-)
+import "github.com/markphelps/optional"
 
 type Order struct {
-	OrderID     string      `json:"orderId"`
-	ServiceType ServiceType `json:"serviceType"`
-	Description string      `json:"description"`
+	OrderID     string
+	ServiceType ServiceType
+	Description string
+}
+
+type OrderPatch struct {
+	OrderID     string
+	ServiceType OptionalServiceType
+	Description optional.String
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -29,7 +28,7 @@ func TestStartOrder(t *testing.T) {
 		{
 			svc: &mockOrderService{},
 			body: `
-					"serviceType": 0,
+					"serviceType": "WRONG!",
 					"description": "Here is a description."
 				}
 			`,
@@ -44,7 +43,7 @@ func TestStartOrder(t *testing.T) {
 			svc: &mockOrderService{},
 			body: `
 				{
-					"serviceType": 0,
+					"serviceType": "WRONG!",
 					"description": "Here is a description."
 				}
 			`,
@@ -61,7 +60,7 @@ func TestStartOrder(t *testing.T) {
 			},
 			body: `
 				{
-					"serviceType": 1,
+					"serviceType": "Delivery",
 					"description": "Here is a description."
 				}
 			`,
@@ -76,7 +75,7 @@ func TestStartOrder(t *testing.T) {
 			svc: &mockOrderService{},
 			body: `
 				{
-					"serviceType": 1,
+					"serviceType": "Delivery",
 					"description": "Here is a description."
 				}
 			`,
@@ -91,13 +90,8 @@ func TestStartOrder(t *testing.T) {
 
 				expected := &response{
 					OK: true,
-					Result: &orderResource{
-						OrderID:     "orderId",
-						ServiceType: 1,
-						Description: "Here is a description.",
-					},
 				}
-				if err := checkResponseBody(expected, &response{Result: &orderResource{}}, rr); err != nil {
+				if err := checkResponseBody(expected, &response{}, rr); err != nil {
 					return err
 				}
 				return nil
@@ -115,7 +109,7 @@ func TestStartOrder(t *testing.T) {
 
 		// Request Set Up
 		req, _ := http.NewRequest("POST", "/orders", strings.NewReader(c.body))
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("content-type", "application/json")
 
 		// Run
 		rr := httptest.NewRecorder()
@@ -128,20 +122,21 @@ func TestStartOrder(t *testing.T) {
 	}
 }
 
-func TestToggleOrder(t *testing.T) {
-
-	validReq, _ := http.NewRequest("POST", "/orders/orderId/toggle", &bytes.Reader{})
-
+func TestUpdateOrder(t *testing.T) {
 	cases := []struct {
 		svc       order.ServiceAPI
-		request   *http.Request
+		body      string
 		condition Condition
 	}{
 		{
-			svc:     &mockOrderService{},
-			request: validReq,
+			svc: &mockOrderService{},
+			body: `
+					"serviceType": "Delivery",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
-				if err := checkStatusCode(http.StatusOK, rr); err != nil {
+				if err := checkStatusCode(http.StatusBadRequest, rr); err != nil {
 					return err
 				}
 				return nil
@@ -151,9 +146,40 @@ func TestToggleOrder(t *testing.T) {
 			svc: &mockOrderService{
 				err: fmt.Errorf("Something horrible happened."),
 			},
-			request: validReq,
+			body: `
+				{
+					"serviceType": "Delivery",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
 				if err := checkStatusCode(http.StatusBadRequest, rr); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			svc: &mockOrderService{},
+			body: `
+				{
+					"serviceType": "Delivery",
+					"description": "Here is a new description."
+				}
+			`,
+			condition: func(rr *httptest.ResponseRecorder) error {
+				if err := checkStatusCode(http.StatusOK, rr); err != nil {
+					return err
+				}
+
+				if err := checkHeader("content-type", "application/json", rr); err != nil {
+					return err
+				}
+
+				expected := &response{
+					OK: true,
+				}
+				if err := checkResponseBody(expected, &response{}, rr); err != nil {
 					return err
 				}
 				return nil
@@ -170,11 +196,12 @@ func TestToggleOrder(t *testing.T) {
 		con.registerRoutes(router)
 
 		// Request Set Up
-		c.request.Header.Set("Content-Type", "application/json")
+		req, _ := http.NewRequest("PATCH", "/orders/orderId", strings.NewReader(c.body))
+		req.Header.Set("content-type", "application/json")
 
 		// Run
 		rr := httptest.NewRecorder()
-		router.ServeHTTP(rr, c.request)
+		router.ServeHTTP(rr, req)
 
 		// Evaluate
 		if err := c.condition(rr); err != nil {
@@ -192,7 +219,7 @@ func (m *mockOrderService) StartOrder(order *model.Order) (string, error) {
 	return "orderId", m.err
 }
 
-func (m *mockOrderService) ToggleOrderServiceType(orderID string) error {
+func (m *mockOrderService) UpdateOrder(order *model.OrderPatch) error {
 	return m.err
 }
 

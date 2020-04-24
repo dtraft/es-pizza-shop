@@ -2,7 +2,6 @@ package event
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 )
@@ -23,14 +22,11 @@ func (e *OrderDescriptionSet) Version() int {
 
 func (e *OrderDescriptionSet) Load(data json.RawMessage, version int) error {
 	switch version {
-	case 1:
+	default:
 		err := json.Unmarshal(data, e)
 		if err != nil {
 			return err
 		}
-	default:
-		_, eventType := eventsource.GetTypeName(e)
-		return fmt.Errorf("Version %d is not supported by %s", version, eventType)
 	}
 	return nil
 }

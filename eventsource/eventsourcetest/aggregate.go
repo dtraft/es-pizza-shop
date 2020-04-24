@@ -19,7 +19,7 @@ type ApplyEventCase struct {
 	Expected eventsource.Aggregate
 }
 
-func (c *HandleCommandCase) HandleCommand(a eventsource.Aggregate) error {
+func (c *HandleCommandCase) TestHandleCommand(a eventsource.Aggregate) error {
 	// Setup aggregate for testing
 	for _, e := range c.Given {
 		event := eventsource.NewEvent(a, e)
@@ -56,7 +56,7 @@ func (c *HandleCommandCase) HandleCommand(a eventsource.Aggregate) error {
 	return nil
 }
 
-func (c *ApplyEventCase) ApplyEvent(a eventsource.Aggregate) error {
+func (c *ApplyEventCase) TestApplyEvent(a eventsource.Aggregate) error {
 	// Setup aggregate for testing
 	for _, e := range c.Given {
 		event := eventsource.NewEvent(a, e)
