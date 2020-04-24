@@ -5,6 +5,10 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/aws/aws-sdk-go/aws"
+
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
 
 var (
@@ -47,6 +51,33 @@ func (r *ServiceType) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return fmt.Errorf("ServiceType should be a string, got %s", data)
 	}
+	v, ok := _ServiceTypeNameToValue[s]
+	if !ok {
+		return fmt.Errorf("invalid ServiceType %q", s)
+	}
+	*r = v
+	return nil
+}
+
+func (r *ServiceType) MarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
+	if s, ok := interface{}(r).(fmt.Stringer); ok {
+		av.S = aws.String(s.String())
+		return nil
+	}
+	s, ok := _ServiceTypeValueToName[*r]
+	if !ok {
+		return fmt.Errorf("invalid ServiceType: %d", r)
+	}
+	av.S = aws.String(s)
+	return nil
+}
+
+func (r *ServiceType) UnmarshalDynamoDBAttributeValue(av *dynamodb.AttributeValue) error {
+	if av.S == nil {
+		return nil
+	}
+
+	s := aws.StringValue(av.S)
 	v, ok := _ServiceTypeNameToValue[s]
 	if !ok {
 		return fmt.Errorf("invalid ServiceType %q", s)
