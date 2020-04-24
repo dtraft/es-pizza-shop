@@ -33,8 +33,8 @@ func TestHandleEvent(t *testing.T) {
 				SNS: events.SNSEntity{
 					MessageAttributes: map[string]interface{}{
 						"eventType": map[string]interface{}{
-							"ServiceType": "String",
-							"Value":       "OrderStartedEvent",
+							"Type":  "String",
+							"Value": "OrderStartedEvent",
 						},
 					},
 					Message: `
