@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -22,42 +20,18 @@ import (
 type Condition func(rr *httptest.ResponseRecorder) error
 
 func TestStartOrder(t *testing.T) {
-
-	malformedReq, _ := http.NewRequest("POST", "/orders", strings.NewReader(`
-			"serviceType": 0,
-			"description": "Here is a description."
-		}
-	`))
-
-	invalidReq, _ := http.NewRequest("POST", "/orders", strings.NewReader(`
-		{
-			"serviceType": 0,
-			"description": "Here is a description."
-		}
-	`))
-
-	validReq, _ := http.NewRequest("POST", "/orders", strings.NewReader(`
-		{
-			"serviceType": 1,
-			"description": "Here is a description."
-		}
-	`))
-
-	validReq2, _ := http.NewRequest("POST", "/orders", strings.NewReader(`
-		{
-			"serviceType": 1,
-			"description": "Here is a description."
-		}
-	`))
-
 	cases := []struct {
 		svc       order.ServiceAPI
-		request   *http.Request
+		body      string
 		condition Condition
 	}{
 		{
-			svc:     &mockOrderService{},
-			request: malformedReq,
+			svc: &mockOrderService{},
+			body: `
+					"serviceType": "WRONG!",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
 				if err := checkStatusCode(http.StatusBadRequest, rr); err != nil {
 					return err
@@ -66,8 +40,13 @@ func TestStartOrder(t *testing.T) {
 			},
 		},
 		{
-			svc:     &mockOrderService{},
-			request: invalidReq,
+			svc: &mockOrderService{},
+			body: `
+				{
+					"serviceType": "WRONG!",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
 				if err := checkStatusCode(http.StatusBadRequest, rr); err != nil {
 					return err
@@ -79,7 +58,12 @@ func TestStartOrder(t *testing.T) {
 			svc: &mockOrderService{
 				err: fmt.Errorf("Something horrible happened."),
 			},
-			request: validReq,
+			body: `
+				{
+					"serviceType": "Delivery",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
 				if err := checkStatusCode(http.StatusBadRequest, rr); err != nil {
 					return err
@@ -88,8 +72,13 @@ func TestStartOrder(t *testing.T) {
 			},
 		},
 		{
-			svc:     &mockOrderService{},
-			request: validReq2,
+			svc: &mockOrderService{},
+			body: `
+				{
+					"serviceType": "Delivery",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
 				if err := checkStatusCode(http.StatusOK, rr); err != nil {
 					return err
@@ -99,12 +88,10 @@ func TestStartOrder(t *testing.T) {
 					return err
 				}
 
-				expected := &orderResource{
-					OrderID:     "orderId",
-					ServiceType: 1,
-					Description: "Here is a description.",
+				expected := &response{
+					OK: true,
 				}
-				if err := checkResponseBody(expected, rr); err != nil {
+				if err := checkResponseBody(expected, &response{}, rr); err != nil {
 					return err
 				}
 				return nil
@@ -121,11 +108,12 @@ func TestStartOrder(t *testing.T) {
 		con.registerRoutes(router)
 
 		// Request Set Up
-		c.request.Header.Set("Content-Type", "application/json")
+		req, _ := http.NewRequest("POST", "/orders", strings.NewReader(c.body))
+		req.Header.Set("content-type", "application/json")
 
 		// Run
 		rr := httptest.NewRecorder()
-		router.ServeHTTP(rr, c.request)
+		router.ServeHTTP(rr, req)
 
 		// Evaluate
 		if err := c.condition(rr); err != nil {
@@ -134,20 +122,21 @@ func TestStartOrder(t *testing.T) {
 	}
 }
 
-func TestToggleOrder(t *testing.T) {
-
-	validReq, _ := http.NewRequest("POST", "/orders/orderId/toggle", &bytes.Reader{})
-
+func TestUpdateOrder(t *testing.T) {
 	cases := []struct {
 		svc       order.ServiceAPI
-		request   *http.Request
+		body      string
 		condition Condition
 	}{
 		{
-			svc:     &mockOrderService{},
-			request: validReq,
+			svc: &mockOrderService{},
+			body: `
+					"serviceType": "Delivery",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
-				if err := checkStatusCode(http.StatusOK, rr); err != nil {
+				if err := checkStatusCode(http.StatusBadRequest, rr); err != nil {
 					return err
 				}
 				return nil
@@ -157,9 +146,40 @@ func TestToggleOrder(t *testing.T) {
 			svc: &mockOrderService{
 				err: fmt.Errorf("Something horrible happened."),
 			},
-			request: validReq,
+			body: `
+				{
+					"serviceType": "Delivery",
+					"description": "Here is a description."
+				}
+			`,
 			condition: func(rr *httptest.ResponseRecorder) error {
 				if err := checkStatusCode(http.StatusBadRequest, rr); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			svc: &mockOrderService{},
+			body: `
+				{
+					"serviceType": "Delivery",
+					"description": "Here is a new description."
+				}
+			`,
+			condition: func(rr *httptest.ResponseRecorder) error {
+				if err := checkStatusCode(http.StatusOK, rr); err != nil {
+					return err
+				}
+
+				if err := checkHeader("content-type", "application/json", rr); err != nil {
+					return err
+				}
+
+				expected := &response{
+					OK: true,
+				}
+				if err := checkResponseBody(expected, &response{}, rr); err != nil {
 					return err
 				}
 				return nil
@@ -176,11 +196,12 @@ func TestToggleOrder(t *testing.T) {
 		con.registerRoutes(router)
 
 		// Request Set Up
-		c.request.Header.Set("Content-Type", "application/json")
+		req, _ := http.NewRequest("PATCH", "/orders/orderId", strings.NewReader(c.body))
+		req.Header.Set("content-type", "application/json")
 
 		// Run
 		rr := httptest.NewRecorder()
-		router.ServeHTTP(rr, c.request)
+		router.ServeHTTP(rr, req)
 
 		// Evaluate
 		if err := c.condition(rr); err != nil {
@@ -190,6 +211,7 @@ func TestToggleOrder(t *testing.T) {
 }
 
 type mockOrderService struct {
+	order.ServiceAPI
 	err error
 }
 
@@ -197,7 +219,7 @@ func (m *mockOrderService) StartOrder(order *model.Order) (string, error) {
 	return "orderId", m.err
 }
 
-func (m *mockOrderService) ToggleOrderServiceType(orderID string) error {
+func (m *mockOrderService) UpdateOrder(order *model.OrderPatch) error {
 	return m.err
 }
 
@@ -220,17 +242,11 @@ func checkHeader(header string, expected string, rr *httptest.ResponseRecorder) 
 	return nil
 }
 
-func checkResponseBody(expected interface{}, rr *httptest.ResponseRecorder) error {
-	rawType := reflect.TypeOf(expected)
-	// source is a pointer, convert to its value
-	if rawType.Kind() == reflect.Ptr {
-		rawType = rawType.Elem()
-	}
-	resource := reflect.New(rawType).Interface()
-	if err := json.NewDecoder(rr.Body).Decode(&resource); err != nil {
+func checkResponseBody(expected interface{}, in interface{}, rr *httptest.ResponseRecorder) error {
+	if err := json.NewDecoder(rr.Body).Decode(&in); err != nil {
 		return fmt.Errorf("Invalid JSON response, details: %s", err)
 	}
-	if diff := deep.Equal(resource, expected); diff != nil {
+	if diff := deep.Equal(in, expected); diff != nil {
 		return fmt.Errorf("%s", diff)
 	}
 	return nil

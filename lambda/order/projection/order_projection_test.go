@@ -42,12 +42,12 @@ func TestHandleEvent(t *testing.T) {
 							"eventId":"6c4539e3-ae1b-44f0-bfc2-4d7531893136",
 							"aggregateId":"84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
 							"aggregateType":"OrderAggregate",
-							"eventVersion":1,
+							"eventVersion":2,
 							"eventType":"OrderStartedEvent",
 							"eventTimestamp":"2020-04-19T19:45:11.475995951Z",
 							"eventData":{
 								"orderId":"84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
-								"serviceType":1
+								"serviceType": "Pickup"
 							}
 						}
 					`,
@@ -58,7 +58,7 @@ func TestHandleEvent(t *testing.T) {
 					EventID:          "6c4539e3-ae1b-44f0-bfc2-4d7531893136",
 					AggregateID:      "84de2628-ac3b-4fcf-b2a1-05cf5b1b5743",
 					AggregateType:    "OrderAggregate",
-					EventTypeVersion: 1,
+					EventTypeVersion: 2,
 					EventType:        "OrderStartedEvent",
 					Timestamp:        time.Date(2020, 04, 19, 19, 45, 11, 475995951, time.UTC),
 					Data: &event.OrderStartedEvent{

@@ -108,7 +108,7 @@ func (r *Repository) Patch(orderID string, order *Order) error {
  */
 
 // QueryAllOrders retrieves a list of all orders, sorted in random order
-func (r *Repository) QueryAllOrders() ([]Order, error) {
+func (r *Repository) QueryAllOrders() ([]*Order, error) {
 
 	result, err := r.db.Scan(&dynamodb.ScanInput{
 		TableName: r.tableName,
@@ -119,7 +119,7 @@ func (r *Repository) QueryAllOrders() ([]Order, error) {
 
 	log.Printf("Raw Orders: %+v", result.Items)
 
-	orders := []Order{}
+	orders := []*Order{}
 	if err := dynamodbattribute.UnmarshalListOfMaps(result.Items, &orders); err != nil {
 		return nil, err
 	}

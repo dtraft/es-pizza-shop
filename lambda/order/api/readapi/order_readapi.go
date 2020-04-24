@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	domain "forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
+	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
 	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/repository"
 	"github.com/apex/gateway"
 	"github.com/aws/aws-sdk-go/aws"
@@ -37,6 +39,10 @@ func queryAllOrders(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		http.Error(w, err.Error(), 500)
 		return
 	}
+	var resources []*orderResource
+	for _, o := range orders {
+		resources = append(resources, resourceFromOrder(o))
+	}
 
 	log.Printf("Orders: %+v", orders)
 
@@ -44,16 +50,33 @@ func queryAllOrders(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 }
 
 /*
+ * Resources
+ */
+
+type orderResource struct {
+	OrderID     string             `json:"orderId"`
+	ServiceType domain.ServiceType `json:"serviceType"`
+	Description string             `json:"description"`
+}
+
+func resourceFromOrder(o *model.Order) *orderResource {
+	return &orderResource{
+		OrderID:     o.OrderID,
+		ServiceType: o.ServiceType,
+		Description: o.Description,
+	}
+}
+
+/*
  * Helpers
  */
 
 func jsonResponse(w http.ResponseWriter, body interface{}) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-ServiceType", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(body); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
 }

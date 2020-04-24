@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/markphelps/optional"
+
 	"github.com/go-playground/validator/v10"
 
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
@@ -32,8 +34,8 @@ type Controller struct {
 }
 
 func (c *Controller) registerRoutes(router *httprouter.Router) {
-	router.POST("/orders/:orderID/toggle", c.toggleOrder)
 	router.POST("/orders", c.startOrder)
+	router.PATCH("/orders/:orderID", c.updateOrder)
 }
 
 func init() {
@@ -63,24 +65,12 @@ func main() {
 	log.Fatal(gateway.ListenAndServe(":3000", router))
 }
 
-func (c *Controller) toggleOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	orderID := p.ByName("orderID")
-
-	if err := c.orderSvc.ToggleOrderServiceType(orderID); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	fmt.Fprint(w, "Order toggled.")
-	return
-}
-
 func (c *Controller) startOrder(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var resource *orderResource
 	err := json.NewDecoder(r.Body).Decode(&resource)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errorResponse(w, err, http.StatusBadRequest)
 		return
 	}
 	if err := validate.Struct(resource); err != nil {
@@ -90,11 +80,34 @@ func (c *Controller) startOrder(w http.ResponseWriter, r *http.Request, _ httpro
 
 	orderID, err := c.orderSvc.StartOrder(resource.toOrder())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		errorResponse(w, err, http.StatusBadRequest)
 		return
 	}
 	resource.OrderID = orderID
-	jsonResponse(w, resource)
+	jsonResponse(w, &response{
+		OK: true,
+	})
+}
+
+func (c *Controller) updateOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	orderID := p.ByName("orderID")
+
+	var resource *orderPatchResource
+	err := json.NewDecoder(r.Body).Decode(&resource)
+	if err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+	resource.OrderID = orderID
+
+	if err := c.orderSvc.UpdateOrder(resource.toOrderPatch()); err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	jsonResponse(w, &response{
+		OK: true,
+	})
 }
 
 /*
@@ -103,7 +116,7 @@ func (c *Controller) startOrder(w http.ResponseWriter, r *http.Request, _ httpro
 
 type orderResource struct {
 	OrderID     string            `json:"orderId"`
-	ServiceType model.ServiceType `json:"serviceType" validate:"gte=1,lte=2"`
+	ServiceType model.ServiceType `json:"serviceType"`
 	Description string            `json:"description"`
 }
 
@@ -115,14 +128,26 @@ func (o *orderResource) toOrder() *model.Order {
 	}
 }
 
-// func (o *OrderResource) validate
+type orderPatchResource struct {
+	OrderID     string                    `json:"orderId"`
+	ServiceType model.OptionalServiceType `json:"serviceType"`
+	Description optional.String           `json:"description"`
+}
+
+func (o *orderPatchResource) toOrderPatch() *model.OrderPatch {
+	return &model.OrderPatch{
+		OrderID:     o.OrderID,
+		ServiceType: o.ServiceType,
+		Description: o.Description,
+	}
+}
 
 /*
  * Helpers
  */
 
 func jsonResponse(w http.ResponseWriter, body interface{}) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(w).Encode(body); err != nil {
@@ -144,10 +169,10 @@ func invalidResponse(w http.ResponseWriter, err error) {
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
 
-	resp := &errorResponse{
+	resp := &response{
 		OK:     false,
 		Errors: errors,
 	}
@@ -158,12 +183,28 @@ func invalidResponse(w http.ResponseWriter, err error) {
 	}
 }
 
-type errorResponse struct {
-	OK     bool `json:"ok"`
-	Errors []*validationError
+func errorResponse(w http.ResponseWriter, err error, code int) {
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(code)
+
+	resp := &response{
+		OK:     false,
+		Result: err.Error(),
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+type response struct {
+	OK     bool               `json:"ok"`
+	Result interface{}        `json:"result,omitempty"`
+	Errors []*validationError `json:"errors,omitempty"`
 }
 
 type validationError struct {
-	Field   string
-	Message string
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }

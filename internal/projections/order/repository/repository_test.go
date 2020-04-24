@@ -44,7 +44,7 @@ func TestRepository_Patch(t *testing.T) {
 					"#serviceType": aws.String("serviceType"),
 				},
 				ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-					":serviceType": {N: aws.String(fmt.Sprintf("%d", model.Pickup))},
+					":serviceType": {S: aws.String("Pickup")},
 				},
 				UpdateExpression: aws.String("SET #serviceType = :serviceType"),
 			},

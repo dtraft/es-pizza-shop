@@ -2,7 +2,6 @@ package event
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
@@ -19,19 +18,29 @@ type OrderServiceTypeSetEvent struct {
 }
 
 func (e *OrderServiceTypeSetEvent) Version() int {
-	return 1
+	return 2
 }
 
 func (e *OrderServiceTypeSetEvent) Load(data json.RawMessage, version int) error {
 	switch version {
 	case 1:
+		v1 := OrderServiceTypeSetEventV1{}
+		err := json.Unmarshal(data, &v1)
+		if err != nil {
+			return err
+		}
+		e.OrderID = v1.OrderID
+		e.ServiceType = model.ServiceType(v1.ServiceType)
+	default:
 		err := json.Unmarshal(data, e)
 		if err != nil {
 			return err
 		}
-	default:
-		_, eventType := eventsource.GetTypeName(e)
-		return fmt.Errorf("Version %d is not supported by %s", version, eventType)
 	}
 	return nil
+}
+
+type OrderServiceTypeSetEventV1 struct {
+	OrderID     string `json:"orderId"`
+	ServiceType int    `json:"serviceType"`
 }

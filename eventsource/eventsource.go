@@ -47,12 +47,17 @@ type EventStore interface {
 	EventsForAggregate(aggregateID string) ([]Event, error)
 }
 
+type EventSourceAPI interface {
+	LoadAggregate(a Aggregate) error
+	ProcessCommand(c Command, a Aggregate) error
+}
+
 type EventSource struct {
 	store EventStore
 }
 
-func New(eventStore EventStore) EventSource {
-	return EventSource{
+func New(eventStore EventStore) *EventSource {
+	return &EventSource{
 		store: eventStore,
 	}
 }

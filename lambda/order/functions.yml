@@ -19,6 +19,10 @@ OrderWriteApi:
         cors: true
     - http:
         path: '/orders/{proxy+}'
+        method: patch
+        cors: true
+    - http:
+        path: '/orders/{proxy+}'
         method: delete
         cors: true
   environment:
