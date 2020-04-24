@@ -25,31 +25,52 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+var startedEvent = eventsource.NewEvent(orderAgg, &event.OrderStartedEvent{
+	OrderID:     "testOrderId",
+	Description: "test desc",
+	ServiceType: model.Pickup,
+})
+
+var serviceTypeSetEvent = eventsource.NewEvent(orderAgg, &event.OrderServiceTypeSetEvent{
+	OrderID:     "testOrderId",
+	ServiceType: model.Delivery,
+})
+
+var descriptionSetEvent = eventsource.NewEvent(orderAgg, &event.OrderDescriptionSet{
+	OrderID:     "testOrderId",
+	Description: "I'm a test!",
+})
+
 func TestProjection_ApplyEvent(t *testing.T) {
 	cases := []struct {
-		Event    eventsource.EventData
+		Event    eventsource.Event
 		Expected *Order
 	}{
 		{
-			Event: &event.OrderStartedEvent{
-				OrderID:     "testOrderId",
-				Description: "test desc",
-				ServiceType: model.Pickup,
-			},
+			Event: startedEvent,
 			Expected: &Order{
 				OrderID:     "testOrderId",
 				Description: "test desc",
 				ServiceType: model.Pickup,
+				CreatedAt:   &startedEvent.Timestamp,
+				UpdatedAt:   &startedEvent.Timestamp,
 			},
 		},
 		{
-			Event: &event.OrderServiceTypeSetEvent{
-				OrderID:     "testOrderId",
-				ServiceType: model.Delivery,
-			},
+
+			Event: serviceTypeSetEvent,
 			Expected: &Order{
 				OrderID:     "testOrderId",
 				ServiceType: model.Delivery,
+				UpdatedAt:   &serviceTypeSetEvent.Timestamp,
+			},
+		},
+		{
+			Event: descriptionSetEvent,
+			Expected: &Order{
+				OrderID:     "testOrderId",
+				Description: "I'm a test!",
+				UpdatedAt:   &descriptionSetEvent.Timestamp,
 			},
 		},
 	}
@@ -58,8 +79,7 @@ func TestProjection_ApplyEvent(t *testing.T) {
 		p.repo = &mockRepo{
 			expected: c.Expected,
 		}
-		event := eventsource.NewEvent(orderAgg, c.Event)
-		if err := p.HandleEvent(event); err != nil {
+		if err := p.HandleEvent(c.Event); err != nil {
 			t.Errorf("Cases[%d]: %s", i, err)
 		}
 	}

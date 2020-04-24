@@ -22,13 +22,16 @@ func NewProjection(repo repository.Interface) *Projection {
 }
 
 func (p *Projection) HandleEvent(e es.Event) error {
+	log.Printf("Handling %T.\n", e)
 	switch d := e.Data.(type) {
 	case *event.OrderStartedEvent:
-		return p.handleOrderStartedEvent(d)
+		return p.handleOrderStartedEvent(d, e)
 	case *event.OrderServiceTypeSetEvent:
-		return p.handleServiceTypeSetEvent(d)
+		return p.handleServiceTypeSetEvent(d, e)
+	case *event.OrderDescriptionSet:
+		return p.handleDescriptionSetEvent(d, e)
 	default:
-		return fmt.Errorf("Unsupported event %s received in TestApplyEvent handler of the Order Projection: %+v", d, e)
+		return fmt.Errorf("Unsupported event %T received in TestApplyEvent handler of the Order Projection: %+v", d, e)
 	}
 }
 
@@ -36,19 +39,27 @@ func (p *Projection) HandleEvent(e es.Event) error {
  * Event Handlers
  */
 
-func (p *Projection) handleOrderStartedEvent(e *event.OrderStartedEvent) error {
-	log.Printf("Handling projection for OrderStartedEvent: %+v", e)
+func (p *Projection) handleOrderStartedEvent(d *event.OrderStartedEvent, e es.Event) error {
 	return p.repo.Save(&Order{
-		OrderID:     e.OrderID,
-		ServiceType: e.ServiceType,
-		Description: e.Description,
+		OrderID:     d.OrderID,
+		ServiceType: d.ServiceType,
+		Description: d.Description,
+		CreatedAt:   &e.Timestamp,
+		UpdatedAt:   &e.Timestamp,
 	})
 }
 
-func (p *Projection) handleServiceTypeSetEvent(e *event.OrderServiceTypeSetEvent) error {
-	log.Printf("Handling projection for OrderServiceTypeSetEvent: %+v", e)
+func (p *Projection) handleServiceTypeSetEvent(d *event.OrderServiceTypeSetEvent, e es.Event) error {
+	return p.repo.Patch(d.OrderID, &Order{
+		ServiceType: d.ServiceType,
+		UpdatedAt:   &e.Timestamp,
+	})
+}
 
-	return p.repo.Patch(e.OrderID, &Order{
-		ServiceType: e.ServiceType,
+func (p *Projection) handleDescriptionSetEvent(d *event.OrderDescriptionSet, e es.Event) error {
+
+	return p.repo.Patch(d.OrderID, &Order{
+		Description: d.Description,
+		UpdatedAt:   &e.Timestamp,
 	})
 }
