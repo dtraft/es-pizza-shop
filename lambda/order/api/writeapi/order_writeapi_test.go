@@ -90,6 +90,9 @@ func TestStartOrder(t *testing.T) {
 
 				expected := &response{
 					OK: true,
+					Result: map[string]interface{}{
+						"orderId": "orderId",
+					},
 				}
 				if err := checkResponseBody(expected, &response{}, rr); err != nil {
 					return err
