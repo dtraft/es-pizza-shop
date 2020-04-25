@@ -86,6 +86,9 @@ func (c *Controller) startOrder(w http.ResponseWriter, r *http.Request, _ httpro
 	resource.OrderID = orderID
 	jsonResponse(w, &response{
 		OK: true,
+		Result: map[string]string{
+			"orderId": orderID,
+		},
 	})
 }
 
