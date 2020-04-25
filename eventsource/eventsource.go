@@ -23,6 +23,11 @@ type Event struct {
 	Data             interface{} `json:"eventData"`
 }
 
+type eventIntermediate struct {
+	*Event
+	Data json.RawMessage `json:"eventData"`
+}
+
 // EventData interface for commands in the domain model
 type EventData interface {
 	Load(json.RawMessage, int) error
@@ -123,16 +128,14 @@ func (e *Event) Load(data []byte) error {
 		return err
 	}
 
-	if err = json.Unmarshal(data, e); err != nil {
+	temp := &eventIntermediate{
+		Event: e,
+	}
+	if err = json.Unmarshal(data, temp); err != nil {
 		return err
 	}
 
-	r, err := json.Marshal(e.Data)
-	if err != nil {
-		return err
-	}
-
-	if err := eventType.Load(r, e.EventTypeVersion); err != nil {
+	if err := eventType.Load(temp.Data, e.EventTypeVersion); err != nil {
 		return err
 	}
 
