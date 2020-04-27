@@ -44,7 +44,7 @@ type Aggregate interface {
 	ApplyEvent(event Event) error
 	setSequence(int)
 	getSequence() int
-	incrementSequence()
+	IncrementSequence()
 }
 
 type AggregateBase struct {
@@ -52,7 +52,7 @@ type AggregateBase struct {
 }
 
 // IncrementVersion ads 1 to the current version
-func (b *AggregateBase) incrementSequence() {
+func (b *AggregateBase) IncrementSequence() {
 	b.Sequence++
 }
 
@@ -116,7 +116,7 @@ func (es *EventSource) ProcessCommand(c Command, a Aggregate) error {
 		return err
 	}
 	for _, event := range events {
-		a.incrementSequence()
+		a.IncrementSequence()
 		e := NewEvent(a, event)
 		err = es.store.SaveEvent(e)
 		// TODO - implement retries if we get an AggregateLockError here
