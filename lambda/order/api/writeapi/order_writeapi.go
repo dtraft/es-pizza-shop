@@ -39,15 +39,16 @@ func (c *Controller) registerRoutes(router *httprouter.Router) {
 }
 
 func init() {
-	var svc *dynamodb.DynamoDB
+	var store eventsource.EventStore
 	f := os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
 	if strings.Contains(f, "local") {
-		svc = dynamodb.New(session.New(), aws.NewConfig().WithRegion("localhost").WithEndpoint("http://host.docker.internal:9898"))
+		svc := dynamodb.New(session.New(), aws.NewConfig().WithRegion("localhost").WithEndpoint("http://host.docker.internal:9898"))
+		store = ddbES.New(svc, "EventsTable-local")
 	} else {
-		svc = dynamodb.New(session.New(), aws.NewConfig())
+		svc := dynamodb.New(session.New(), aws.NewConfig())
+		store = ddbES.New(svc, os.Getenv("TABLE_NAME"))
 	}
 
-	store := ddbES.New(svc, os.Getenv("TABLE_NAME"))
 	es := eventsource.New(store)
 	orderSvc := order.NewService(es)
 

@@ -2,6 +2,8 @@ service: pizza-shop
 
 plugins:
   - serverless-iam-roles-per-function
+  - serverless-dynamodb-local
+  - serverless-offline
 
 package:
   individually: true
@@ -13,6 +15,16 @@ provider:
   runtime: go1.x
   versionFunctions: false
   stage: ${opt:stage, self:custom.defaultStage}
+
+custom:
+  dynamodb:
+    stages:
+      - local
+    start:
+      port: 9898
+      inMemory: true
+      migrate: true
+
 
 functions:
   # Infrastructure

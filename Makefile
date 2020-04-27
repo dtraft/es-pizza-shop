@@ -22,6 +22,10 @@ test:
 coverage: test
 	go tool cover -html=coverage.out
 
+# Local Dev
+local:
+	npm run start
+
 # Utils
 clean: 
 	rm -rf .bin/*

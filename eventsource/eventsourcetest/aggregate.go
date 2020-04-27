@@ -26,6 +26,7 @@ func (c *HandleCommandCase) TestHandleCommand(a eventsource.Aggregate) error {
 		if err := a.ApplyEvent(event); err != nil {
 			return err
 		}
+		a.IncrementSequence()
 	}
 
 	// Handle command
@@ -36,20 +37,21 @@ func (c *HandleCommandCase) TestHandleCommand(a eventsource.Aggregate) error {
 
 	for i, event := range events {
 		exp := eventsource.NewEvent(a, c.Expected[i])
+		got := eventsource.NewEvent(a, event)
 
-		if exp.EventType != event.EventType {
-			return fmt.Errorf("Expected %s, got %s for EventType", exp.EventType, event.EventType)
+		if exp.EventType != got.EventType {
+			return fmt.Errorf("Expected %s, got %s for EventType", exp.EventType, got.EventType)
 		}
 
-		if exp.AggregateType != event.AggregateType {
-			return fmt.Errorf("Expected %s, got %s for AggregateType", exp.AggregateType, event.AggregateType)
+		if exp.AggregateType != got.AggregateType {
+			return fmt.Errorf("Expected %s, got %s for AggregateType", exp.AggregateType, got.AggregateType)
 		}
 
-		if exp.EventTypeVersion != event.EventTypeVersion {
-			return fmt.Errorf("Expected %d, got %d for EventTypeVersion", exp.EventTypeVersion, event.EventTypeVersion)
+		if exp.EventTypeVersion != got.EventTypeVersion {
+			return fmt.Errorf("Expected %d, got %d for EventTypeVersion", exp.EventTypeVersion, got.EventTypeVersion)
 		}
 
-		if diff := deep.Equal(exp.Data, event.Data); diff != nil {
+		if diff := deep.Equal(exp.Data, got.Data); diff != nil {
 			return fmt.Errorf("Events[%d]: %s", i, diff)
 		}
 	}

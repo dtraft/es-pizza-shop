@@ -2,8 +2,9 @@ package dynamodb
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/awserr"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"github.com/aws/aws-sdk-go/aws"
@@ -29,11 +30,20 @@ func (e *EventStore) SaveEvent(event eventsource.Event) error {
 		return err
 	}
 
-	av["timestampEventIdCompositeKey"] = &dynamodb.AttributeValue{
-		S: aws.String(fmt.Sprintf("%s#%s", event.Timestamp, event.EventID)),
+	err = e.save(av)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case dynamodb.ErrCodeConditionalCheckFailedException:
+				return &eventsource.AggregateLockError{
+					ID:       event.AggregateID,
+					Sequence: event.AggregateSequence,
+				}
+			}
+		}
 	}
 
-	return e.save(av)
+	return err
 }
 
 func (e *EventStore) EventsForAggregate(aggregateID string) ([]eventsource.Event, error) {
@@ -50,9 +60,11 @@ func (e *EventStore) EventsForAggregate(aggregateID string) ([]eventsource.Event
 
 func (e *EventStore) save(item map[string]*dynamodb.AttributeValue) error {
 	_, err := e.svc.PutItem(&dynamodb.PutItemInput{
-		TableName: e.tableName,
-		Item:      item,
+		TableName:           e.tableName,
+		Item:                item,
+		ConditionExpression: aws.String("attribute_not_exists(aggregateSequence)"),
 	})
+
 	return err
 }
 
@@ -71,13 +83,14 @@ func (e *EventStore) query(query string, attributeValues map[string]*dynamodb.At
 
 // Event is the DynamoDB represenation of a domain event
 type Event struct {
-	EventID          string                 `json:"eventId"`
-	AggregateID      string                 `json:"aggregateId"`
-	AggregateType    string                 `json:"aggregateType"`
-	EventTypeVersion int                    `json:"eventVersion"`
-	EventType        string                 `json:"eventType"`
-	Timestamp        time.Time              `json:"eventTimestamp"`
-	RawData          map[string]interface{} `json:"eventData"`
+	EventID           string                 `json:"eventId"`
+	AggregateID       string                 `json:"aggregateId"`
+	AggregateType     string                 `json:"aggregateType"`
+	AggregateSequence int                    `json:"aggregateSequence"`
+	EventType         string                 `json:"eventType"`
+	EventTypeVersion  int                    `json:"eventVersion"`
+	Timestamp         time.Time              `json:"eventTimestamp"`
+	RawData           map[string]interface{} `json:"eventData"`
 }
 
 func (e *Event) toDomainEvent() (eventsource.Event, error) {
@@ -94,13 +107,14 @@ func (e *Event) toDomainEvent() (eventsource.Event, error) {
 		return eventsource.Event{}, err
 	}
 	event := eventsource.Event{
-		EventID:          e.EventID,
-		AggregateID:      e.AggregateID,
-		AggregateType:    e.AggregateType,
-		EventTypeVersion: e.EventTypeVersion,
-		EventType:        e.EventType,
-		Timestamp:        e.Timestamp,
-		Data:             eventData,
+		EventID:           e.EventID,
+		AggregateID:       e.AggregateID,
+		AggregateType:     e.AggregateType,
+		AggregateSequence: e.AggregateSequence,
+		EventTypeVersion:  e.EventTypeVersion,
+		EventType:         e.EventType,
+		Timestamp:         e.Timestamp,
+		Data:              eventData,
 	}
 
 	return event, nil
@@ -111,7 +125,6 @@ func unmarshalEventsFromDB(results []map[string]*dynamodb.AttributeValue) ([]eve
 	dbEvents := []Event{}
 	err := dynamodbattribute.UnmarshalListOfMaps(results, &dbEvents)
 	if err != nil {
-		fmt.Println("Error here")
 		return events, err
 	}
 	events = make([]eventsource.Event, len(dbEvents))
