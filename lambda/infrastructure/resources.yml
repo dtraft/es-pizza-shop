@@ -8,12 +8,12 @@ Resources:
       AttributeDefinitions:
         - AttributeName: aggregateId
           AttributeType: S
-        - AttributeName: timestampEventIdCompositeKey
-          AttributeType: S
+        - AttributeName: aggregateSequence
+          AttributeType: N
       KeySchema:
         - AttributeName: aggregateId
           KeyType: HASH
-        - AttributeName: timestampEventIdCompositeKey
+        - AttributeName: aggregateSequence
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE

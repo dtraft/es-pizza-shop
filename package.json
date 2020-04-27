@@ -2,10 +2,17 @@
   "name": "es-pizza-shop",
   "version": "1.0.0",
   "description": "Proof of Concept for cloud native event sourcing architecture",
+  "scripts": {
+    "start": "serverless offline start --stage local --useDocker",
+    "dynamodb": "sls dynamodb start --migrate --stage local"
+  },
   "dependencies": {
     "serverless-iam-roles-per-function": "^2.0.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "serverless-dynamodb-local": "^0.2.39",
+    "serverless-offline": "^6.1.4"
+  },
   "author": "Drew Trafton",
   "license": "ISC"
 }

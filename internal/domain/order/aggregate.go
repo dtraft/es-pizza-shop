@@ -12,6 +12,7 @@ import (
 
 // Aggregate handles commands for orders
 type Aggregate struct {
+	eventsource.AggregateBase
 	OrderID     string
 	ServiceType ServiceType
 	Description string
@@ -22,7 +23,7 @@ func (a *Aggregate) Init(aggregateID string) {
 }
 
 // TestHandleCommand handles the commands for the Aggregate
-func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.Event, error) {
+func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.EventData, error) {
 	switch c := command.(type) {
 	case *StartOrderCommand:
 		return a.handleStartOrder(c)
@@ -34,17 +35,27 @@ func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.Ev
 	}
 }
 
-func (a *Aggregate) handleStartOrder(c *StartOrderCommand) ([]eventsource.Event, error) {
+func (a *Aggregate) handleStartOrder(c *StartOrderCommand) ([]eventsource.EventData, error) {
+
+	if a.Sequence != 0 {
+		return nil, fmt.Errorf("An order with id %s already exists.", c.OrderID)
+	}
+
 	event := &OrderStartedEvent{
 		OrderID:     c.OrderID,
 		ServiceType: c.ServiceType,
 		Description: c.Description,
 	}
-	return []eventsource.Event{eventsource.NewEvent(a, event)}, nil
+	return []eventsource.EventData{event}, nil
 }
 
-func (a *Aggregate) handleOrderUpdate(c *UpdateOrderCommand) ([]eventsource.Event, error) {
-	var events []eventsource.Event
+func (a *Aggregate) handleOrderUpdate(c *UpdateOrderCommand) ([]eventsource.EventData, error) {
+
+	if a.Sequence == 0 {
+		return nil, fmt.Errorf("No order found with id %s.", c.OrderID)
+	}
+
+	var events []eventsource.EventData
 
 	// Service ServiceType
 	serviceType, err := c.ServiceType.Get()
@@ -53,7 +64,7 @@ func (a *Aggregate) handleOrderUpdate(c *UpdateOrderCommand) ([]eventsource.Even
 			OrderID:     c.OrderID,
 			ServiceType: serviceType,
 		}
-		events = append(events, eventsource.NewEvent(a, event))
+		events = append(events, event)
 	}
 
 	// Description
@@ -63,7 +74,7 @@ func (a *Aggregate) handleOrderUpdate(c *UpdateOrderCommand) ([]eventsource.Even
 			OrderID:     c.OrderID,
 			Description: description,
 		}
-		events = append(events, eventsource.NewEvent(a, event))
+		events = append(events, event)
 	}
 
 	return events, nil

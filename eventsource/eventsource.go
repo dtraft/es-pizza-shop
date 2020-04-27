@@ -14,13 +14,14 @@ type Command interface {
 
 // Event stores the data for every event
 type Event struct {
-	EventID          string      `json:"eventId"`
-	AggregateID      string      `json:"aggregateId"`
-	AggregateType    string      `json:"aggregateType"`
-	EventTypeVersion int         `json:"eventVersion"`
-	EventType        string      `json:"eventType"`
-	Timestamp        time.Time   `json:"eventTimestamp"`
-	Data             interface{} `json:"eventData"`
+	EventID           string      `json:"eventId"`
+	AggregateID       string      `json:"aggregateId"`
+	AggregateType     string      `json:"aggregateType"`
+	AggregateSequence int         `json:"aggregateSequence"`
+	EventTypeVersion  int         `json:"eventVersion"`
+	EventType         string      `json:"eventType"`
+	Timestamp         time.Time   `json:"eventTimestamp"`
+	Data              interface{} `json:"eventData"`
 }
 
 type eventIntermediate struct {
@@ -39,8 +40,28 @@ type Aggregate interface {
 	Init(aggregateID string)
 	AggregateID() string
 	Type() string
-	HandleCommand(command Command) ([]Event, error)
+	HandleCommand(command Command) ([]EventData, error)
 	ApplyEvent(event Event) error
+	setSequence(int)
+	getSequence() int
+	incrementSequence()
+}
+
+type AggregateBase struct {
+	Sequence int
+}
+
+// IncrementVersion ads 1 to the current version
+func (b *AggregateBase) incrementSequence() {
+	b.Sequence++
+}
+
+func (b *AggregateBase) setSequence(seq int) {
+	b.Sequence = seq
+}
+
+func (b *AggregateBase) getSequence() int {
+	return b.Sequence
 }
 
 type Projection interface {
@@ -77,6 +98,7 @@ func (es *EventSource) LoadAggregate(a Aggregate) error {
 		if err = a.ApplyEvent(event); err != nil {
 			return err
 		}
+		a.setSequence(event.AggregateSequence)
 	}
 
 	return nil
@@ -85,21 +107,24 @@ func (es *EventSource) LoadAggregate(a Aggregate) error {
 func (es *EventSource) ProcessCommand(c Command, a Aggregate) error {
 	// Restore the aggregate
 	a.Init(c.AggregateID())
+
 	if err := es.LoadAggregate(a); err != nil {
 		return err
 	}
-
 	events, err := a.HandleCommand(c)
 	if err != nil {
 		return err
 	}
 	for _, event := range events {
-		err := a.ApplyEvent(event)
+		a.incrementSequence()
+		e := NewEvent(a, event)
+		err = es.store.SaveEvent(e)
+		// TODO - implement retries if we get an AggregateLockError here
 		if err != nil {
 			return err
 		}
 
-		err = es.store.SaveEvent(event)
+		err := a.ApplyEvent(e)
 		if err != nil {
 			return err
 		}
@@ -111,15 +136,17 @@ func (es *EventSource) ProcessCommand(c Command, a Aggregate) error {
 // NewEvent publishes the event
 func NewEvent(a Aggregate, p EventData) Event {
 	_, eventType := GetTypeName(p)
-	return Event{
-		EventID:          uuid.New().String(),
-		AggregateID:      a.AggregateID(),
-		AggregateType:    a.Type(),
-		EventTypeVersion: p.Version(),
-		EventType:        eventType,
-		Timestamp:        time.Now(),
-		Data:             p,
+	event := Event{
+		EventID:           uuid.New().String(),
+		AggregateID:       a.AggregateID(),
+		AggregateType:     a.Type(),
+		AggregateSequence: a.getSequence(),
+		EventType:         eventType,
+		EventTypeVersion:  p.Version(),
+		Timestamp:         time.Now(),
+		Data:              p,
 	}
+	return event
 }
 
 func (e *Event) Load(data []byte) error {
