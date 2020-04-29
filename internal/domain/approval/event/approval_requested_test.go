@@ -6,18 +6,18 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/eventsource/eventsourcetest"
 )
 
-func TestDeliveryConfirmed_Load(t *testing.T) {
+func TestApprovalRequested_Load(t *testing.T) {
 	cases := eventsourcetest.LoadCases{
 		{
 			Label:   "correctly handles version 1 event",
 			Version: 1,
 			Event: `
 				{
-					"deliveryId": 101
+					"approvalId": 101
 				}
 			`,
-			Expected: &DeliveryConfirmed{
-				DeliveryID: 101,
+			Expected: &ApprovalRequested{
+				ApprovalID: 101,
 			},
 		},
 		{
@@ -25,10 +25,10 @@ func TestDeliveryConfirmed_Load(t *testing.T) {
 			Version: 1,
 			Event: `
 				{
-					"deliveryId":"84de2628-ac3b-4fcf-b2a1-05cf5b1b5743"
+					"approvalID":"84de2628-ac3b-4fcf-b2a1-05cf5b1b5743"
 				}
 			`,
-			Expected:    &DeliveryConfirmed{},
+			Expected:    &ApprovalRequested{},
 			ShouldError: true,
 		},
 	}

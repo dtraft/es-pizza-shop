@@ -3,10 +3,10 @@ package command
 import "strconv"
 
 // ReceiveApproval attempts to submit the order for fulfillment
-type ConfirmDelivery struct {
+type RequestDelivery struct {
 	DeliveryID int
 }
 
-func (c *ConfirmDelivery) AggregateID() string {
+func (c *RequestDelivery) AggregateID() string {
 	return strconv.Itoa(c.DeliveryID)
 }

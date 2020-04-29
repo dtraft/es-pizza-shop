@@ -5,24 +5,24 @@ import (
 	"testing"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval/command"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/delivery/command"
 )
 
-func TestService_ReceiveApproval(t *testing.T) {
+func TestService_ReceiveDeliveryNotification(t *testing.T) {
 	cases := []struct {
 		Label       string
 		Check       Condition
 		ShouldError bool
 	}{
 		{
-			Label: "Should correctly issue the ReceiveApproval command",
+			Label: "Should correctly issue the DeliveryConfirmed command",
 			Check: func(c eventsource.Command) error {
-				cmd, ok := c.(*command.ReceiveApproval)
+				cmd, ok := c.(*command.ConfirmDelivery)
 				if !ok {
-					return fmt.Errorf("Expected %T, got %T", &command.ReceiveApproval{}, c)
+					return fmt.Errorf("Expected %T, got %T", &command.ConfirmDelivery{}, c)
 				}
-				if cmd.ApprovalID != 101 {
-					return fmt.Errorf("Expected `%d` for ApprovalID, got `%d`", 101, cmd.ApprovalID)
+				if cmd.DeliveryID != 101 {
+					return fmt.Errorf("Expected `%d` for DeliveryID, got `%d`", 101, cmd.DeliveryID)
 				}
 				return nil
 			},
@@ -35,7 +35,7 @@ func TestService_ReceiveApproval(t *testing.T) {
 			shouldError: c.ShouldError,
 		})
 
-		err := s.ReceiveApproval(101)
+		err := s.ReceiveDeliveryNotification(101)
 		if c.ShouldError && err == nil {
 			t.Errorf("Cases[%d] FAILED: %s, expected an error.", i, c.Label)
 			continue

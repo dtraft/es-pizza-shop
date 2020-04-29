@@ -12,7 +12,15 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/eventsource/eventsourcetest"
 )
 
+var requestApproval = &command.RequestApproval{
+	ApprovalID: 101,
+}
+
 var receiveApproval = &command.ReceiveApproval{
+	ApprovalID: 101,
+}
+
+var approvalRequestedEvent = &event.ApprovalRequested{
 	ApprovalID: 101,
 }
 
@@ -23,6 +31,22 @@ var approvalReceivedEvent = &event.ApprovalReceived{
 func TestAggregate_HandleCommand(t *testing.T) {
 
 	cases := eventsourcetest.HandleCommandCases{
+		{
+			Label: "ignore double approvals requests",
+			Given: []eventsource.EventData{
+				approvalRequestedEvent,
+			},
+			Command:  requestApproval,
+			Expected: nil,
+		},
+		{
+			Label:   "correctly issues the ApprovalRequested event",
+			Given:   nil,
+			Command: requestApproval,
+			Expected: []eventsource.EventData{
+				approvalRequestedEvent,
+			},
+		},
 		{
 			Label: "prevents double approvals",
 			Given: []eventsource.EventData{

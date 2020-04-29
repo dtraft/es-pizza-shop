@@ -12,7 +12,15 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/eventsource/eventsourcetest"
 )
 
+var requestDelivery = &command.ConfirmDelivery{
+	DeliveryID: 101,
+}
+
 var confirmDelivery = &command.ConfirmDelivery{
+	DeliveryID: 101,
+}
+
+var deliveryRequestedEvent = &event.DeliveryConfirmed{
 	DeliveryID: 101,
 }
 
@@ -23,6 +31,22 @@ var deliveryConfirmedEvent = &event.DeliveryConfirmed{
 func TestAggregate_HandleCommand(t *testing.T) {
 
 	cases := eventsourcetest.HandleCommandCases{
+		{
+			Label: "ignore double delivery requests",
+			Given: []eventsource.EventData{
+				deliveryRequestedEvent,
+			},
+			Command:  requestDelivery,
+			Expected: nil,
+		},
+		{
+			Label:   "correctly issues the DeliveryRequested event",
+			Given:   nil,
+			Command: requestDelivery,
+			Expected: []eventsource.EventData{
+				deliveryRequestedEvent,
+			},
+		},
 		{
 			Label: "prevents double deliveries",
 			Given: []eventsource.EventData{

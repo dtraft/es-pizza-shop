@@ -8,6 +8,8 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval/command"
 )
 
+// TODO - Test Request Order
+
 func TestService_ReceiveApproval(t *testing.T) {
 	cases := []struct {
 		Label       string

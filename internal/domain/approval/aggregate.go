@@ -1,7 +1,6 @@
 package approval
 
 import (
-	"errors"
 	"fmt"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
@@ -23,17 +22,33 @@ func (a *Aggregate) Init(aggregateID string) {
 // TestHandleCommand handles the commands for the Aggregate
 func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.EventData, error) {
 	switch c := command.(type) {
+	case *RequestApproval:
+		return a.handleRequestCommand(c)
 	case *ReceiveApproval:
 		return a.handleReceiveCommand(c)
 	default:
-		message := fmt.Sprintf("No handler for command: %+v", c)
-		return nil, errors.New(message)
+		return nil, fmt.Errorf("No handler for command: %T", c)
 	}
 }
 
-func (a *Aggregate) handleReceiveCommand(c *ReceiveApproval) ([]eventsource.EventData, error) {
-	// If order has already been approved, don't emit any events
+func (a *Aggregate) handleRequestCommand(c *RequestApproval) ([]eventsource.EventData, error) {
+	if c.ApprovalID == 0 {
+		return nil, fmt.Errorf("A valid approvalID was not provided, got: %d", c.ApprovalID)
+	}
+
 	if a.Sequence != 0 {
+		return nil, nil
+	}
+
+	event := &ApprovalRequested{
+		ApprovalID: c.ApprovalID,
+	}
+	return []eventsource.EventData{event}, nil
+}
+
+func (a *Aggregate) handleReceiveCommand(c *ReceiveApproval) ([]eventsource.EventData, error) {
+
+	if a.Approved {
 		return nil, nil
 	}
 
@@ -45,11 +60,9 @@ func (a *Aggregate) handleReceiveCommand(c *ReceiveApproval) ([]eventsource.Even
 
 func (a *Aggregate) ApplyEvent(event eventsource.Event) error {
 
-	switch e := event.Data.(type) {
+	switch event.Data.(type) {
 	case *ApprovalReceived:
 		a.Approved = true
-	default:
-		return fmt.Errorf("Unsupported event %T received in ApplyEvent handler of the Order Aggregate: %+v", e, e)
 	}
 
 	return nil

@@ -64,6 +64,10 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 		return nil, err
 	}
 
+	if err := s.processCommand(&command.RequestApproval{ApprovalID: o.ApprovalID}); err != nil {
+		return nil, err
+	}
+
 	return o, nil
 }
 

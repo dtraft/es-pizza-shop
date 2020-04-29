@@ -23,6 +23,8 @@ func (a *Aggregate) Init(aggregateID string) {
 // TestHandleCommand handles the commands for the Aggregate
 func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.EventData, error) {
 	switch c := command.(type) {
+	case *RequestDelivery:
+		return a.handleRequestDelivery(c)
 	case *ConfirmDelivery:
 		return a.handleConfirmDelivery(c)
 	default:
@@ -30,10 +32,24 @@ func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.Ev
 		return nil, errors.New(message)
 	}
 }
+func (a *Aggregate) handleRequestDelivery(c *RequestDelivery) ([]eventsource.EventData, error) {
+	if c.DeliveryID == 0 {
+		return nil, fmt.Errorf("A valid approvalID was not provided, got: %d", c.DeliveryID)
+	}
+
+	if a.Sequence != 0 {
+		return nil, nil
+	}
+
+	event := &DeliveryRequested{
+		DeliveryID: c.DeliveryID,
+	}
+	return []eventsource.EventData{event}, nil
+}
 
 func (a *Aggregate) handleConfirmDelivery(c *ConfirmDelivery) ([]eventsource.EventData, error) {
 	// If order has already been approved, don't emit any events
-	if a.Sequence != 0 {
+	if a.Delivered {
 		return nil, nil
 	}
 
@@ -45,11 +61,9 @@ func (a *Aggregate) handleConfirmDelivery(c *ConfirmDelivery) ([]eventsource.Eve
 
 func (a *Aggregate) ApplyEvent(event eventsource.Event) error {
 
-	switch e := event.Data.(type) {
+	switch event.Data.(type) {
 	case *DeliveryConfirmed:
 		a.Delivered = true
-	default:
-		return fmt.Errorf("Unsupported event %T received in ApplyEvent handler of the Order Aggregate: %+v", e, e)
 	}
 
 	return nil

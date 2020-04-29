@@ -6,23 +6,21 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval/command"
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/delivery/command"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 )
 
-var url = "https://jsonplaceholder.cypress.io/todos"
+var url = "https://jsonplaceholder.cypress.io/posts"
 
-type OrderApproval struct {
-	ApprovalID  int               `json:"id"`
-	ServiceType model.ServiceType `json:"serviceType"`
-	Description string            `json:"description"`
+type OrderDelivery struct {
+	DeliveryID  int    `json:"id"`
+	Description string `json:"description"`
 }
 
 type ServiceAPI interface {
-	ReceiveApproval(int) error
-	SubmitOrderForApproval(*OrderApproval) (*OrderApproval, error)
+	ReceiveDeliveryNotification(int) error
+	SubmitOrderForDelivery(*OrderDelivery) (*OrderDelivery, error)
 }
 
 type Service struct {
@@ -39,11 +37,11 @@ func NewService(eventSource eventsource.EventSourceAPI) *Service {
 	}
 }
 
-func (s *Service) ReceiveApproval(approvalID int) error {
-	return s.processCommand(&command.ReceiveApproval{ApprovalID: approvalID})
+func (s *Service) ReceiveDeliveryNotification(deliveryID int) error {
+	return s.processCommand(&command.ConfirmDelivery{DeliveryID: deliveryID})
 }
 
-func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval, error) {
+func (s *Service) SubmitOrderForDelivery(payload *OrderDelivery) (*OrderDelivery, error) {
 
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -59,8 +57,12 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 		return nil, err
 	}
 
-	var o *OrderApproval
+	var o *OrderDelivery
 	if err := json.Unmarshal(respBody, o); err != nil {
+		return nil, err
+	}
+
+	if err := s.processCommand(&command.RequestDelivery{DeliveryID: o.DeliveryID}); err != nil {
 		return nil, err
 	}
 
