@@ -9,5 +9,9 @@ const (
 	Delivery
 )
 
+func (r ServiceType) String() string {
+	return _ServiceTypeValueToName[r]
+}
+
 //go:generate jsonenums -type=ServiceType
 //go:generate optional -type=ServiceType
