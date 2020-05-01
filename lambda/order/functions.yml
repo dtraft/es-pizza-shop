@@ -87,6 +87,9 @@ OrderProjection:
             - OrderStartedEvent
             - OrderServiceTypeSetEvent
             - OrderDescriptionSet
+            - OrderSubmitted
+            - OrderApproved
+            - OrderDelivered
   iamRoleStatementsName: 'OrderProjectionRole-${opt:stage}'
   iamRoleStatements:
     - Effect: Allow      
