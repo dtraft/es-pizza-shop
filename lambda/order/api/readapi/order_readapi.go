@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	domain "forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
@@ -46,7 +47,7 @@ func queryAllOrders(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 
 	log.Printf("Orders: %+v", orders)
 
-	jsonResponse(w, orders)
+	jsonResponse(w, resources)
 }
 
 /*
@@ -58,6 +59,9 @@ type orderResource struct {
 	ServiceType domain.ServiceType `json:"serviceType"`
 	Status      domain.Status      `json:"status"`
 	Description string             `json:"description"`
+
+	CreatedAt *time.Time `json:"createdAt"`
+	UpdatedAt *time.Time `json:"updatedAt"`
 }
 
 func resourceFromOrder(o *model.Order) *orderResource {
@@ -71,6 +75,8 @@ func resourceFromOrder(o *model.Order) *orderResource {
 		ServiceType: o.ServiceType,
 		Status:      status,
 		Description: o.Description,
+		CreatedAt:   o.CreatedAt,
+		UpdatedAt:   o.UpdatedAt,
 	}
 }
 
