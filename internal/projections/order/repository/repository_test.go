@@ -49,12 +49,48 @@ func TestRepository_Patch(t *testing.T) {
 				UpdateExpression: aws.String("SET #serviceType = :serviceType"),
 			},
 		},
+		{
+			Updates: &Order{
+				Description: "I'm a test!",
+			},
+			Expected: &dynamodb.UpdateItemInput{
+				TableName: aws.String(mockTable),
+				Key: map[string]*dynamodb.AttributeValue{
+					"orderId": {S: aws.String(mockOrderID)},
+				},
+				ExpressionAttributeNames: map[string]*string{
+					"#description": aws.String("description"),
+				},
+				ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+					":description": {S: aws.String("I'm a test!")},
+				},
+				UpdateExpression: aws.String("SET #description = :description"),
+			},
+		},
+		{
+			Updates: &Order{
+				Status: model.Submitted,
+			},
+			Expected: &dynamodb.UpdateItemInput{
+				TableName: aws.String(mockTable),
+				Key: map[string]*dynamodb.AttributeValue{
+					"orderId": {S: aws.String(mockOrderID)},
+				},
+				ExpressionAttributeNames: map[string]*string{
+					"#status": aws.String("status"),
+				},
+				ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+					":status": {S: aws.String("Submitted")},
+				},
+				UpdateExpression: aws.String("SET #status = :status"),
+			},
+		},
 	}
 
-	for _, c := range cases {
+	for i, c := range cases {
 		mockDb.Expected = c.Expected
 		if err := repo.Patch(mockOrderID, c.Updates); err != nil {
-			t.Error(err)
+			t.Errorf("Cases[%d]: %s", i, err)
 		}
 	}
 }
