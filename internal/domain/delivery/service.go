@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/delivery/command"
@@ -65,6 +66,8 @@ func (s *Service) SubmitOrderForDelivery(payload *OrderDelivery) (*OrderDelivery
 	if err := s.processCommand(&command.RequestDelivery{DeliveryID: o.DeliveryID}); err != nil {
 		return nil, err
 	}
+
+	log.Printf("Delivery submitted, got ID: %d", o.DeliveryID)
 
 	return o, nil
 }

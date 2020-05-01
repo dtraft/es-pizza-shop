@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval/command"
@@ -67,6 +68,7 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 	if err := s.processCommand(&command.RequestApproval{ApprovalID: o.ApprovalID}); err != nil {
 		return nil, err
 	}
+	log.Printf("Approval submitted, got ID: %d", o.ApprovalID)
 
 	return o, nil
 }
