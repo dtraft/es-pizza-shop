@@ -199,7 +199,58 @@ func TestUpdateOrder(t *testing.T) {
 		con.registerRoutes(router)
 
 		// Request Set Up
-		req, _ := http.NewRequest("PATCH", "/orders/orderId", strings.NewReader(c.body))
+		req, _ := http.NewRequest("PATCH", "/orders/edit/orderId", strings.NewReader(c.body))
+		req.Header.Set("content-type", "application/json")
+
+		// Run
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, req)
+
+		// Evaluate
+		if err := c.condition(rr); err != nil {
+			t.Errorf("Case[%d]: %s", i, err)
+		}
+	}
+}
+
+func TestSubmitOrder(t *testing.T) {
+	cases := []struct {
+		svc       order.ServiceAPI
+		body      string
+		condition Condition
+	}{
+		{
+			svc: &mockOrderService{},
+			condition: func(rr *httptest.ResponseRecorder) error {
+				if err := checkStatusCode(http.StatusOK, rr); err != nil {
+					return err
+				}
+
+				if err := checkHeader("content-type", "application/json", rr); err != nil {
+					return err
+				}
+
+				expected := &response{
+					OK: true,
+				}
+				if err := checkResponseBody(expected, &response{}, rr); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+	}
+
+	for i, c := range cases {
+		// Routing Set up
+		con := &Controller{
+			orderSvc: c.svc,
+		}
+		router := httprouter.New()
+		con.registerRoutes(router)
+
+		// Request Set Up
+		req, _ := http.NewRequest("POST", "/orders/submit/orderId", strings.NewReader(""))
 		req.Header.Set("content-type", "application/json")
 
 		// Run
@@ -223,6 +274,10 @@ func (m *mockOrderService) StartOrder(order *model.Order) (string, error) {
 }
 
 func (m *mockOrderService) UpdateOrder(order *model.OrderPatch) error {
+	return m.err
+}
+
+func (m *mockOrderService) SubmitOrder(orderID string) error {
 	return m.err
 }
 

@@ -42,9 +42,11 @@ type Controller struct {
 
 func (c *Controller) registerRoutes(router *httprouter.Router) {
 	router.POST("/orders", c.startOrder)
-	router.PATCH("/orders/:orderID", c.updateOrder)
+	router.PATCH("/orders/edit/:orderID", c.updateOrder)
+	router.POST("/orders/submit/:orderID", c.submitOrder)
 	router.POST("/orders/approvals/:approvalID", c.approveCallback)
 	router.POST("/orders/deliveries/:deliveryID", c.deliveryCallback)
+
 }
 
 func init() {
@@ -116,6 +118,19 @@ func (c *Controller) updateOrder(w http.ResponseWriter, r *http.Request, p httpr
 	resource.OrderID = orderID
 
 	if err := c.orderSvc.UpdateOrder(resource.toOrderPatch()); err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	jsonResponse(w, &response{
+		OK: true,
+	})
+}
+
+func (c *Controller) submitOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	orderID := p.ByName("orderID")
+
+	if err := c.orderSvc.SubmitOrder(orderID); err != nil {
 		errorResponse(w, err, http.StatusBadRequest)
 		return
 	}

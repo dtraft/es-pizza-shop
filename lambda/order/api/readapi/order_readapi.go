@@ -56,13 +56,20 @@ func queryAllOrders(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 type orderResource struct {
 	OrderID     string             `json:"orderId"`
 	ServiceType domain.ServiceType `json:"serviceType"`
+	Status      domain.Status      `json:"status"`
 	Description string             `json:"description"`
 }
 
 func resourceFromOrder(o *model.Order) *orderResource {
+	status := domain.Started
+	if o.Status > 0 {
+		status = o.Status
+	}
+
 	return &orderResource{
 		OrderID:     o.OrderID,
 		ServiceType: o.ServiceType,
+		Status:      status,
 		Description: o.Description,
 	}
 }
