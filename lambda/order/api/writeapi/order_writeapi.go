@@ -6,7 +6,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/delivery"
+
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval"
 
 	"github.com/markphelps/optional"
 
@@ -30,12 +35,18 @@ var validate *validator.Validate
 var controller *Controller
 
 type Controller struct {
-	orderSvc order.ServiceAPI
+	orderSvc    order.ServiceAPI
+	approvalSvc approval.ServiceAPI
+	deliverySvc delivery.ServiceAPI
 }
 
 func (c *Controller) registerRoutes(router *httprouter.Router) {
 	router.POST("/orders", c.startOrder)
-	router.PATCH("/orders/:orderID", c.updateOrder)
+	router.PATCH("/orders/edit/:orderID", c.updateOrder)
+	router.POST("/orders/submit/:orderID", c.submitOrder)
+	router.POST("/orders/approvals/:approvalID", c.approveCallback)
+	router.POST("/orders/deliveries/:deliveryID", c.deliveryCallback)
+
 }
 
 func init() {
@@ -53,7 +64,9 @@ func init() {
 	orderSvc := order.NewService(es)
 
 	controller = &Controller{
-		orderSvc: orderSvc,
+		orderSvc:    orderSvc,
+		approvalSvc: approval.NewService(es),
+		deliverySvc: delivery.NewService(es),
 	}
 
 	validate = validator.New()
@@ -105,6 +118,58 @@ func (c *Controller) updateOrder(w http.ResponseWriter, r *http.Request, p httpr
 	resource.OrderID = orderID
 
 	if err := c.orderSvc.UpdateOrder(resource.toOrderPatch()); err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	jsonResponse(w, &response{
+		OK: true,
+	})
+}
+
+func (c *Controller) submitOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	orderID := p.ByName("orderID")
+
+	if err := c.orderSvc.SubmitOrder(orderID); err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	jsonResponse(w, &response{
+		OK: true,
+	})
+}
+
+func (c *Controller) approveCallback(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
+	approvalID := p.ByName("approvalID")
+
+	i, err := strconv.Atoi(approvalID)
+	if err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+	fmt.Printf("Got approvalID: %d", i)
+
+	if err := c.approvalSvc.ReceiveApproval(i); err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	jsonResponse(w, &response{
+		OK: true,
+	})
+}
+
+func (c *Controller) deliveryCallback(w http.ResponseWriter, _ *http.Request, p httprouter.Params) {
+	deliveryID := p.ByName("deliveryID")
+
+	i, err := strconv.Atoi(deliveryID)
+	if err != nil {
+		errorResponse(w, err, http.StatusBadRequest)
+		return
+	}
+
+	if err := c.deliverySvc.ReceiveDeliveryNotification(i); err != nil {
 		errorResponse(w, err, http.StatusBadRequest)
 		return
 	}

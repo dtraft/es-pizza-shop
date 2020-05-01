@@ -1,5 +1,5 @@
 Resources:
-  # DynamoDB Table
+  # DynamoDB Tables
   EventsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -17,6 +17,34 @@ Resources:
           KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+
+  SagaStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: SagaStateTable-${opt:stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sagaId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sagaId
+          KeyType: HASH
+
+  SagaAssociationTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: SagaAssociationTable-${opt:stage}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: associationId
+          AttributeType: S
+        - AttributeName: sagaType
+          AttributeType: S
+      KeySchema:
+        - AttributeName: associationId
+          KeyType: HASH
+        - AttributeName: sagaType
+          KeyType: RANGE
       
   # S3 Bucket
   EventRepository:

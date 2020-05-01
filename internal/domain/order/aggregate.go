@@ -16,6 +16,7 @@ type Aggregate struct {
 	OrderID     string
 	ServiceType ServiceType
 	Description string
+	Status      Status
 }
 
 func (a *Aggregate) Init(aggregateID string) {
@@ -28,7 +29,13 @@ func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.Ev
 	case *StartOrderCommand:
 		return a.handleStartOrder(c)
 	case *UpdateOrderCommand:
-		return a.handleOrderUpdate(c)
+		return a.handleUpdateOrder(c)
+	case *SubmitOrderCommand:
+		return a.handleSubmitOrder(c)
+	case *ApproveOrderCommand:
+		return a.handleApproveOrder(c)
+	case *DeliverOrderCommand:
+		return a.handleDeliverOrder(c)
 	default:
 		message := fmt.Sprintf("No handler for command: %+v", c)
 		return nil, errors.New(message)
@@ -49,10 +56,13 @@ func (a *Aggregate) handleStartOrder(c *StartOrderCommand) ([]eventsource.EventD
 	return []eventsource.EventData{event}, nil
 }
 
-func (a *Aggregate) handleOrderUpdate(c *UpdateOrderCommand) ([]eventsource.EventData, error) {
+func (a *Aggregate) handleUpdateOrder(c *UpdateOrderCommand) ([]eventsource.EventData, error) {
 
 	if a.Sequence == 0 {
 		return nil, fmt.Errorf("No order found with id %s.", c.OrderID)
+	}
+	if a.Status != Started {
+		return nil, fmt.Errorf("Cannot update an order which has already been submitted.")
 	}
 
 	var events []eventsource.EventData
@@ -80,18 +90,70 @@ func (a *Aggregate) handleOrderUpdate(c *UpdateOrderCommand) ([]eventsource.Even
 	return events, nil
 }
 
+func (a *Aggregate) handleSubmitOrder(c *SubmitOrderCommand) ([]eventsource.EventData, error) {
+
+	if a.Sequence == 0 {
+		return nil, fmt.Errorf("No order found with id %s.", c.OrderID)
+	}
+
+	if a.Status != Started {
+		return nil, fmt.Errorf("Cannot submit order which has already been submitted.")
+	}
+
+	return []eventsource.EventData{
+		&OrderSubmitted{OrderID: c.OrderID},
+	}, nil
+}
+
+func (a *Aggregate) handleApproveOrder(c *ApproveOrderCommand) ([]eventsource.EventData, error) {
+
+	if a.Sequence == 0 {
+		return nil, fmt.Errorf("No order found with id %s.", c.OrderID)
+	}
+
+	if a.Status != Submitted {
+		return nil, fmt.Errorf("Cannot approve order with status: %s.", a.Status)
+	}
+
+	return []eventsource.EventData{
+		&OrderApproved{OrderID: c.OrderID},
+	}, nil
+}
+
+func (a *Aggregate) handleDeliverOrder(c *DeliverOrderCommand) ([]eventsource.EventData, error) {
+
+	if a.Sequence == 0 {
+		return nil, fmt.Errorf("No order found with id %s.", c.OrderID)
+	}
+
+	if a.Status != Approved {
+		return nil, fmt.Errorf("Cannot deliver order with status: %s.", a.Status)
+	}
+
+	return []eventsource.EventData{
+		&OrderDelivered{OrderID: c.OrderID},
+	}, nil
+}
+
 func (a *Aggregate) ApplyEvent(event eventsource.Event) error {
 
 	switch e := event.Data.(type) {
 	case *OrderStartedEvent:
 		a.ServiceType = e.ServiceType
 		a.Description = e.Description
+		a.Status = Started
 	case *OrderServiceTypeSetEvent:
 		a.ServiceType = e.ServiceType
 	case *OrderDescriptionSet:
 		a.Description = e.Description
+	case *OrderSubmitted:
+		a.Status = Submitted
+	case *OrderApproved:
+		a.Status = Approved
+	case *OrderDelivered:
+		a.Status = Delivered
 	default:
-		return fmt.Errorf("Unsupported event received in TestApplyEvent handler of the Order Aggregate: %+v", e)
+		return fmt.Errorf("Unsupported event %T received in ApplyEvent handler of the Order Aggregate: %+v", e, e)
 	}
 
 	return nil
