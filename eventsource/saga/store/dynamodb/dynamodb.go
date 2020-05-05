@@ -19,8 +19,8 @@ type SagaStore struct {
 }
 
 type sagaAssociation struct {
-	AssociationIdSagaTypeCompositeKey string `dynamodbav:"associationIdSagaTypeCompositeKey"`
-	SagaId                            string `dynamodbav:"sagaId"`
+	CompositeKey string `dynamodbav:"compositeKey"`
+	SagaId       string `dynamodbav:"sagaId"`
 }
 
 type sagaDto struct {
@@ -37,8 +37,8 @@ func New(svc *dynamodb.DynamoDB, associationsTable string, sagaTable string) *Sa
 	}
 }
 
-func (s *SagaStore) Load(associationID string, sagaType string) (*saga.RawSagaWrapper, error) {
-	sagaId, err := s.retrieveSagaID(associationID, sagaType)
+func (s *SagaStore) Load(association *saga.SagaAssociation, sagaType string) (*saga.Wrapper, error) {
+	sagaId, err := s.retrieveSagaID(association, sagaType)
 	if err != nil {
 		return nil, err
 	}
@@ -75,19 +75,19 @@ func (s *SagaStore) Load(associationID string, sagaType string) (*saga.RawSagaWr
 		return nil, err
 	}
 
-	return &saga.RawSagaWrapper{
+	return &saga.Wrapper{
 		ID:      out.ID,
 		Version: out.Version,
 		Data:    encoded,
 	}, nil
 }
 
-func (s *SagaStore) AddAssociationID(associationID string, wrapper *saga.RawSagaWrapper) error {
+func (s *SagaStore) AddAssociationID(association *saga.SagaAssociation, wrapper *saga.Wrapper) error {
 
-	compositeKey := fmt.Sprintf("%s#%s", associationID, wrapper.Type)
+	compositeKey := fmt.Sprintf("%s#%s#%s", association.ID, association.AssociationType, wrapper.Type)
 	av, err := dynamodbattribute.MarshalMap(&sagaAssociation{
-		AssociationIdSagaTypeCompositeKey: compositeKey,
-		SagaId:                            wrapper.ID,
+		CompositeKey: compositeKey,
+		SagaId:       wrapper.ID,
 	})
 	if err != nil {
 		return err
@@ -99,9 +99,11 @@ func (s *SagaStore) AddAssociationID(associationID string, wrapper *saga.RawSaga
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
-func (s *SagaStore) Save(wrapper *saga.RawSagaWrapper) error {
+func (s *SagaStore) Save(wrapper *saga.Wrapper) error {
 	var out interface{}
 	if err := json.Unmarshal(wrapper.Data, &out); err != nil {
 		return err
@@ -126,14 +128,13 @@ func (s *SagaStore) Save(wrapper *saga.RawSagaWrapper) error {
 	return nil
 }
 
-func (s *SagaStore) retrieveSagaID(associationID string, sagaType string) (string, error) {
+func (s *SagaStore) retrieveSagaID(association *saga.SagaAssociation, sagaType string) (string, error) {
+	compositeKey := fmt.Sprintf("%s#%s#%s", association.ID, association.AssociationType, sagaType)
+
 	input := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
-			"associationId": {
-				S: aws.String(associationID),
-			},
-			"sagaType": {
-				S: aws.String(sagaType),
+			"compositeKey": {
+				S: aws.String(compositeKey),
 			},
 		},
 		TableName: s.associationsTable,
@@ -145,7 +146,7 @@ func (s *SagaStore) retrieveSagaID(associationID string, sagaType string) (strin
 			switch aerr.Code() {
 			case dynamodb.ErrCodeResourceNotFoundException:
 				return "", &saga.SagaAssociationNotFoundError{
-					AssociationID: associationID,
+					AssociationID: association.ID,
 					SagaType:      sagaType,
 				}
 			}
@@ -161,4 +162,4 @@ func (s *SagaStore) retrieveSagaID(associationID string, sagaType string) (strin
 	return a.SagaId, nil
 }
 
-var _ saga.SagaStorer = (*SagaStore)(nil)
+var _ saga.Storer = (*SagaStore)(nil)

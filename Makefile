@@ -14,6 +14,9 @@ order_readapi:
 order_projection:
 	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_projection lambda/order/projection/order_projection.go
 
+order_fulfillment_saga:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_projection lambda/order/saga/order_fulfillment_saga.go
+
 # Tests
 test:
 	go test ./... -cover -race -coverprofile=coverage.out

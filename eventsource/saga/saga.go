@@ -10,7 +10,13 @@ import (
 )
 
 type SagaManager struct {
-	store SagaStorer
+	store Storer
+}
+
+func NewManager(store Storer) *SagaManager {
+	return &SagaManager{
+		store: store,
+	}
 }
 
 func (m *SagaManager) ProcessEvent(event eventsource.Event, d SagaAPI) error {
@@ -20,29 +26,22 @@ func (m *SagaManager) ProcessEvent(event eventsource.Event, d SagaAPI) error {
 	}
 
 	// Load SagaWrapper
-	var s *SagaWrapper
+	w := &Wrapper{
+		Type: d.Type(),
+	}
 	if d.StartEvent() == event.EventType {
-		s = &SagaWrapper{
-			ID:   uuid.New().String(),
-			Data: d,
-		}
-		if err := m.store.AddAssociationID(associationID, s); err != nil {
+		w.ID = uuid.New().String()
+		if err := m.store.AddAssociationID(associationID, w); err != nil {
 			return err
 		}
-
 	} else {
-		raw, err := m.store.Load(associationID, d.Type())
+		w, err := m.store.Load(associationID, d.Type())
 		if err != nil {
 			return err
 		}
 
-		if err := d.Load(raw.Data, raw.Version); err != nil {
+		if err := d.Load(w.Data, w.Version); err != nil {
 			return err
-		}
-
-		s = &SagaWrapper{
-			ID:   raw.ID,
-			Data: d,
 		}
 	}
 
@@ -58,19 +57,16 @@ func (m *SagaManager) ProcessEvent(event eventsource.Event, d SagaAPI) error {
 		return err
 	}
 
-	raw := &RawSagaWrapper{
-		ID:      s.ID,
-		Version: d.Version(),
-		Type:    d.Type(),
-		Data:    b,
-	}
-	if err := m.store.Save(raw); err != nil {
+	w.Version = d.Version()
+	w.Data = b
+
+	if err := m.store.Save(w); err != nil {
 		return err
 	}
 
 	if out != nil {
 		for _, id := range out.AssociationIDs {
-			if err := m.store.AddAssociationID(id, raw); err != nil {
+			if err := m.store.AddAssociationID(id, w); err != nil {
 				return err
 			}
 		}
@@ -79,10 +75,10 @@ func (m *SagaManager) ProcessEvent(event eventsource.Event, d SagaAPI) error {
 	return nil
 }
 
-type SagaStorer interface {
-	Load(associationID string, sagaType string) (*RawSagaWrapper, error)
-	AddAssociationID(associationID string, saga *RawSagaWrapper) error
-	Save(saga *RawSagaWrapper) error
+type Storer interface {
+	Load(association *SagaAssociation, sagaType string) (*Wrapper, error)
+	AddAssociationID(association *SagaAssociation, saga *Wrapper) error
+	Save(saga *Wrapper) error
 }
 
 type SagaAPI interface {
@@ -91,15 +87,11 @@ type SagaAPI interface {
 	StartEvent() string
 	Load(data json.RawMessage, version int) error
 
-	AssociationID(event eventsource.Event) (string, error)
+	AssociationID(event eventsource.Event) (*SagaAssociation, error)
 	HandleEvent(event eventsource.Event) (*HandleEventResult, error)
 }
-type SagaWrapper struct {
-	ID   string
-	Data SagaAPI
-}
 
-type RawSagaWrapper struct {
+type Wrapper struct {
 	ID      string
 	Version int
 	Type    string
@@ -107,7 +99,12 @@ type RawSagaWrapper struct {
 }
 
 type HandleEventResult struct {
-	AssociationIDs []string
+	AssociationIDs []*SagaAssociation
+}
+
+type SagaAssociation struct {
+	ID              string
+	AssociationType string
 }
 
 type SagaAssociationNotFoundError struct {
