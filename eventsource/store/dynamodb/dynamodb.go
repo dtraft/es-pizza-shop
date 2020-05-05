@@ -138,3 +138,5 @@ func unmarshalEventsFromDB(results []map[string]*dynamodb.AttributeValue) ([]eve
 
 	return events, nil
 }
+
+var _ eventsource.EventStorer = (*EventStore)(nil)

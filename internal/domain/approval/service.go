@@ -10,15 +10,13 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval/command"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 )
 
 var url = "https://jsonplaceholder.cypress.io/todos"
 
 type OrderApproval struct {
-	ApprovalID  int               `json:"id"`
-	ServiceType model.ServiceType `json:"serviceType"`
-	Description string            `json:"description"`
+	ApprovalID  int    `json:"id"`
+	Description string `json:"description"`
 }
 
 type ServiceAPI interface {
@@ -68,7 +66,7 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 	if err := s.processCommand(&command.RequestApproval{ApprovalID: o.ApprovalID}); err != nil {
 		return nil, err
 	}
-	log.Printf("Approval submitted, got ID: %d", o.ApprovalID)
+	log.Printf("Approval requested with payload: %+v, got tracking ID: %d", payload, o.ApprovalID)
 
 	return o, nil
 }
