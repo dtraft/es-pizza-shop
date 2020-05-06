@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource/saga"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -24,9 +25,9 @@ type sagaAssociation struct {
 }
 
 type sagaDto struct {
-	ID      string
-	Version int
-	Data    interface{}
+	ID      string      `dynamodbav:"sagaId"`
+	Version int         `dynamodbav:"version"`
+	Data    interface{} `dynamodbav:"data"`
 }
 
 func New(svc *dynamodb.DynamoDB, associationsTable string, sagaTable string) *SagaStore {
@@ -65,11 +66,14 @@ func (s *SagaStore) Load(association *saga.SagaAssociation, sagaType string) (*s
 		return nil, err
 	}
 
+	log.Printf("Loaded from DynamoDB: %+v", result)
+
 	out := &sagaDto{}
 	if err := dynamodbattribute.UnmarshalMap(result.Item, out); err != nil {
 		return nil, err
 	}
 
+	log.Printf("Unmarshaled from DynamoDB: %+v", out)
 	encoded, err := json.Marshal(out)
 	if err != nil {
 		return nil, err
@@ -78,6 +82,7 @@ func (s *SagaStore) Load(association *saga.SagaAssociation, sagaType string) (*s
 	return &saga.Wrapper{
 		ID:      out.ID,
 		Version: out.Version,
+		Type:    sagaType,
 		Data:    encoded,
 	}, nil
 }
@@ -118,7 +123,7 @@ func (s *SagaStore) Save(wrapper *saga.Wrapper) error {
 		return err
 	}
 	_, err = s.svc.PutItem(&dynamodb.PutItemInput{
-		TableName: s.associationsTable,
+		TableName: s.sagaTable,
 		Item:      av,
 	})
 	if err != nil {

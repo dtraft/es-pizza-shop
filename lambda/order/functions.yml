@@ -107,6 +107,7 @@ OrderFulfillmentSaga:
     include:
       - ./.bin/order_fulfillment_saga
   environment:
+    EVENT_TABLE_NAME: !Ref EventsTable
     SAGA_TABLE_NAME: !Ref SagaTable
     ASSOCIATIONS_TABLE_NAME: !Ref SagaAssociationTable
   events:
@@ -118,8 +119,8 @@ OrderFulfillmentSaga:
             - OrderStartedEvent
             - OrderDescriptionSet
             - OrderSubmitted
-            - OrderApproved
-            - OrderDelivered
+            - ApprovalReceived
+            - DeliveryConfirmed
   iamRoleStatementsName: 'OrderFulfillmentSaga-${opt:stage}'
   iamRoleStatements:
     - Effect: Allow
@@ -130,9 +131,18 @@ OrderFulfillmentSaga:
         - dynamodb:Query
       Resource: !GetAtt SagaTable.Arn
     - Effect: Allow
-        Action:
-          - dynamodb:PutItem
-          - dynamodb:GetItem
-          - dynamodb:UpdateItem
-          - dynamodb:Query
-        Resource: !GetAtt SagaAssociationTable.Arn
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:Query
+      Resource: !GetAtt SagaAssociationTable.Arn
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:Query
+      Resource: !GetAtt EventsTable.Arn
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+      Resource: '*'

@@ -35,11 +35,10 @@ func (m *SagaManager) ProcessEvent(event eventsource.Event, d SagaAPI) error {
 			return err
 		}
 	} else {
-		w, err := m.store.Load(associationID, d.Type())
+		w, err = m.store.Load(associationID, d.Type())
 		if err != nil {
 			return err
 		}
-
 		if err := d.Load(w.Data, w.Version); err != nil {
 			return err
 		}

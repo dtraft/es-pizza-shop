@@ -58,7 +58,7 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 		return nil, err
 	}
 
-	var o *OrderApproval
+	o := &OrderApproval{}
 	if err := json.Unmarshal(respBody, o); err != nil {
 		return nil, err
 	}

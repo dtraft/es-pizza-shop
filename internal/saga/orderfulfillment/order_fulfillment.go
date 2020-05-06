@@ -23,6 +23,13 @@ type OrderFulfillmentSaga struct {
 	Delivered   bool
 }
 
+func New(deliverySvc delivery.ServiceAPI, approvalSvc approval.ServiceAPI) *OrderFulfillmentSaga {
+	return &OrderFulfillmentSaga{
+		deliverySvc: deliverySvc,
+		approvalSvc: approvalSvc,
+	}
+}
+
 func (s *OrderFulfillmentSaga) Type() string {
 	return "OrderFulfillmentSaga"
 }
@@ -82,6 +89,7 @@ func (s *OrderFulfillmentSaga) HandleEvent(event eventsource.Event) (*saga.Handl
 			return nil, err
 		}
 		return &saga.HandleEventResult{AssociationIDs: ids}, nil
+	// TODO - handle ApprovalReceived and DeliveryConfirmed
 	default:
 		return nil, fmt.Errorf("Unsupported event %T received: %+v", d, event)
 	}

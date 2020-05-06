@@ -143,7 +143,7 @@ func (r *Repository) GetOrder(orderID string) (*Order, error) {
 
 	log.Printf("Raw Order: %+v", result.Item)
 
-	var order *Order
+	order := &Order{}
 	if err := dynamodbattribute.UnmarshalMap(result.Item, order); err != nil {
 		return nil, err
 	}

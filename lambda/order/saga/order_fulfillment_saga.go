@@ -6,10 +6,15 @@ import (
 	"log"
 	"os"
 
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/delivery"
+
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval"
+
 	"forge.lmig.com/n1505471/pizza-shop/internal/saga/orderfulfillment"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource/saga"
-	ddbStore "forge.lmig.com/n1505471/pizza-shop/eventsource/saga/store/dynamodb"
+	ddbSagaStore "forge.lmig.com/n1505471/pizza-shop/eventsource/saga/store/dynamodb"
+	ddbEventStore "forge.lmig.com/n1505471/pizza-shop/eventsource/store/dynamodb"
 
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"github.com/aws/aws-lambda-go/events"
@@ -20,11 +25,18 @@ import (
 )
 
 var manager *saga.SagaManager
+var deliverySvc delivery.ServiceAPI
+var approvalSvc approval.ServiceAPI
+var eventsource es.EventSourceAPI
 
 func init() {
 	db := dynamodb.New(session.New(), aws.NewConfig())
-	store := ddbStore.New(db, os.Getenv("ASSOCIATIONS_TABLE_NAME"), os.Getenv("SAGA_TABLE_NAME"))
+	store := ddbSagaStore.New(db, os.Getenv("ASSOCIATIONS_TABLE_NAME"), os.Getenv("SAGA_TABLE_NAME"))
+	eventStore := ddbEventStore.New(db, os.Getenv("EVENT_TABLE_NAME"))
+	eventsource = es.New(eventStore)
 	manager = saga.NewManager(store)
+	deliverySvc = delivery.NewService(eventsource)
+	approvalSvc = approval.NewService(eventsource)
 }
 
 func main() {
@@ -53,7 +65,8 @@ func handleEvent(r events.SNSEventRecord) error {
 	}
 
 	// Handle saga
-	if err := manager.ProcessEvent(event, &orderfulfillment.OrderFulfillmentSaga{}); err != nil {
+	orderFulfillmentSaga := orderfulfillment.New(deliverySvc, approvalSvc)
+	if err := manager.ProcessEvent(event, orderFulfillmentSaga); err != nil {
 		return fmt.Errorf("Error handling event with payload: %+v, details: %s", event, err)
 	}
 
