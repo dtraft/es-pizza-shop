@@ -18,10 +18,10 @@ Resources:
       StreamSpecification:
         StreamViewType: NEW_IMAGE
 
-  SagaStateTable:
+  SagaTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: SagaStateTable-${opt:stage}
+      TableName: SagaTable-${opt:stage}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: sagaId
@@ -36,15 +36,11 @@ Resources:
       TableName: SagaAssociationTable-${opt:stage}
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: associationId
-          AttributeType: S
-        - AttributeName: sagaType
+        - AttributeName: compositeKey
           AttributeType: S
       KeySchema:
-        - AttributeName: associationId
+        - AttributeName: compositeKey
           KeyType: HASH
-        - AttributeName: sagaType
-          KeyType: RANGE
       
   # S3 Bucket
   EventRepository:

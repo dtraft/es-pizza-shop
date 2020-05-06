@@ -99,3 +99,40 @@ OrderProjection:
         - dynamodb:UpdateItem   
         - dynamodb:Query     
       Resource: !GetAtt OrderTable.Arn
+
+# Saga
+OrderFulfillmentSaga:
+  handler: ./.bin/order_fulfillment_saga
+  package:
+    include:
+      - ./.bin/order_fulfillment_saga
+  environment:
+    SAGA_TABLE_NAME: !Ref SagaTable
+    ASSOCIATIONS_TABLE_NAME: !Ref SagaAssociationTable
+  events:
+    - sns:
+        arn: !Ref EventBus
+        topicName: 'EventBus-${opt:stage}'
+        filterPolicy:
+          eventType:
+            - OrderStartedEvent
+            - OrderDescriptionSet
+            - OrderSubmitted
+            - OrderApproved
+            - OrderDelivered
+  iamRoleStatementsName: 'OrderFulfillmentSaga-${opt:stage}'
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:Query
+      Resource: !GetAtt SagaTable.Arn
+    - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
+          - dynamodb:Query
+        Resource: !GetAtt SagaAssociationTable.Arn
