@@ -127,6 +127,30 @@ func (r *Repository) QueryAllOrders() ([]*Order, error) {
 	return orders, nil
 }
 
+func (r *Repository) GetOrder(orderID string) (*Order, error) {
+
+	result, err := r.db.GetItem(&dynamodb.GetItemInput{
+		Key: map[string]*dynamodb.AttributeValue{
+			"orderId": {
+				S: aws.String(orderID),
+			},
+		},
+		TableName: r.tableName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Raw Order: %+v", result.Item)
+
+	var order *Order
+	if err := dynamodbattribute.UnmarshalMap(result.Item, order); err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
 /*
  * Utils
  */
