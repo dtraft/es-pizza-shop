@@ -74,7 +74,7 @@ func (s *SagaStore) Load(association *saga.SagaAssociation, sagaType string) (*s
 	}
 
 	log.Printf("Unmarshaled from DynamoDB: %+v", out)
-	encoded, err := json.Marshal(out)
+	encoded, err := json.Marshal(out.Data)
 	if err != nil {
 		return nil, err
 	}

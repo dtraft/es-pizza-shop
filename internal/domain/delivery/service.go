@@ -48,17 +48,19 @@ func (s *Service) SubmitOrderForDelivery(payload *OrderDelivery) (*OrderDelivery
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
+
 	defer resp.Body.Close()
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	var o *OrderDelivery
+	o := &OrderDelivery{}
 	if err := json.Unmarshal(respBody, o); err != nil {
 		return nil, err
 	}

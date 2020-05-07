@@ -118,6 +118,7 @@ OrderFulfillmentSaga:
           eventType:
             - OrderStartedEvent
             - OrderDescriptionSet
+            - OrderServiceTypeSetEvent
             - OrderSubmitted
             - ApprovalReceived
             - DeliveryConfirmed

@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order"
+
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/delivery"
 
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval"
@@ -27,6 +29,7 @@ import (
 var manager *saga.SagaManager
 var deliverySvc delivery.ServiceAPI
 var approvalSvc approval.ServiceAPI
+var orderSvc order.ServiceAPI
 var eventsource es.EventSourceAPI
 
 func init() {
@@ -37,6 +40,7 @@ func init() {
 	manager = saga.NewManager(store)
 	deliverySvc = delivery.NewService(eventsource)
 	approvalSvc = approval.NewService(eventsource)
+	orderSvc = order.NewService(eventsource)
 }
 
 func main() {
@@ -65,7 +69,7 @@ func handleEvent(r events.SNSEventRecord) error {
 	}
 
 	// Handle saga
-	orderFulfillmentSaga := orderfulfillment.New(deliverySvc, approvalSvc)
+	orderFulfillmentSaga := orderfulfillment.New(orderSvc, deliverySvc, approvalSvc)
 	if err := manager.ProcessEvent(event, orderFulfillmentSaga); err != nil {
 		return fmt.Errorf("Error handling event with payload: %+v, details: %s", event, err)
 	}

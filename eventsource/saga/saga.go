@@ -3,6 +3,7 @@ package saga
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 
@@ -39,36 +40,41 @@ func (m *SagaManager) ProcessEvent(event eventsource.Event, d SagaAPI) error {
 		if err != nil {
 			return err
 		}
+		log.Printf("Sent to Saga Load: %+s", w.Data)
 		if err := d.Load(w.Data, w.Version); err != nil {
 			return err
 		}
 	}
 
 	// Handle Event
-	out, err := d.HandleEvent(event)
-	if err != nil {
-		return err
-	}
+	// defer handling errors, since we'll want to make sure saga state and any associations
+	// have the chance to be saved.
+	log.Printf("Before Saga state: %+v", d)
+	out, handleEventErr := d.HandleEvent(event)
 
 	// Save SagaWrapper
 	b, err := json.Marshal(d)
 	if err != nil {
 		return err
 	}
-
 	w.Version = d.Version()
 	w.Data = b
-
+	log.Printf("Wrapper Saga state: %+s", string(w.Data))
 	if err := m.store.Save(w); err != nil {
 		return err
 	}
 
 	if out != nil {
 		for _, id := range out.AssociationIDs {
+			log.Printf("Adding associationId: %+v", id)
 			if err := m.store.AddAssociationID(id, w); err != nil {
 				return err
 			}
 		}
+	}
+
+	if handleEventErr != nil {
+		return err
 	}
 
 	return nil
