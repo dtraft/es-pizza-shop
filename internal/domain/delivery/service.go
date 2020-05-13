@@ -3,6 +3,7 @@ package delivery
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 )
 
-var url = "https://jsonplaceholder.cypress.io/posts"
+var apiURL = "https://jsonplaceholder.cypress.io"
 
 type OrderDelivery struct {
 	DeliveryID  int    `json:"id"`
@@ -26,6 +27,7 @@ type ServiceAPI interface {
 
 type Service struct {
 	eventSource eventsource.EventSourceAPI
+	url         string
 }
 
 func (s *Service) processCommand(c eventsource.Command) error {
@@ -35,6 +37,7 @@ func (s *Service) processCommand(c eventsource.Command) error {
 func NewService(eventSource eventsource.EventSourceAPI) *Service {
 	return &Service{
 		eventSource: eventSource,
+		url:         apiURL,
 	}
 }
 
@@ -49,7 +52,7 @@ func (s *Service) SubmitOrderForDelivery(payload *OrderDelivery) (*OrderDelivery
 		return nil, err
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(fmt.Sprintf("%s/posts", s.url), "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}

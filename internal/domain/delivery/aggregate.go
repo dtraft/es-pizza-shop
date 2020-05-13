@@ -34,7 +34,7 @@ func (a *Aggregate) HandleCommand(command eventsource.Command) ([]eventsource.Ev
 }
 func (a *Aggregate) handleRequestDelivery(c *RequestDelivery) ([]eventsource.EventData, error) {
 	if c.DeliveryID == 0 {
-		return nil, fmt.Errorf("A valid approvalID was not provided, got: %d", c.DeliveryID)
+		return nil, fmt.Errorf("A valid deliveryID was not provided, got: %d", c.DeliveryID)
 	}
 
 	if a.Sequence != 0 {
