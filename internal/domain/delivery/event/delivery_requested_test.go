@@ -7,7 +7,7 @@ import (
 )
 
 func TestDeliveryRequested_Load(t *testing.T) {
-	cases := eventsourcetest.LoadCases{
+	cases := eventsourcetest.EventLoadTestCases{
 		{
 			Label:   "correctly handles version 1 event",
 			Version: 1,

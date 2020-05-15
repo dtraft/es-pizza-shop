@@ -26,11 +26,11 @@ type OrderFulfillmentSaga struct {
 	approvalSvc approval.ServiceAPI
 	orderSvc    order.ServiceAPI
 
-	OrderID         string
-	Description     string
-	IsDeliveryOrder bool
-	Approved        bool
-	Delivered       bool
+	OrderID         string `json:"orderId"`
+	Description     string `json:"description"`
+	IsDeliveryOrder bool   `json:"isDeliveryOrder"`
+	Approved        bool   `json:"approved"`
+	Delivered       bool   `json:"delivered"`
 }
 
 var _ saga.SagaAPI = (*OrderFulfillmentSaga)(nil)
