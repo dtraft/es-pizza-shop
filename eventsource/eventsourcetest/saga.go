@@ -24,8 +24,8 @@ type SagaLoadTestCase struct {
 type SagaLoadTestCases []*SagaLoadTestCase
 
 func (c *SagaLoadTestCase) Test() error {
-	eventType, _ := eventsource.GetTypeName(c.Expected)
-	got := reflect.New(eventType).Interface().(eventsource.EventData)
+	sagaType, _ := eventsource.GetTypeName(c.Expected)
+	got := reflect.New(sagaType).Interface().(saga.SagaAPI)
 	err := got.Load([]byte(c.Saga), c.Version)
 
 	if c.ShouldError {
@@ -57,7 +57,7 @@ type SagaAssociationIDTestCase struct {
 	Label         string
 	Saga          saga.SagaAPI
 	Event         eventsource.Event
-	Expected      saga.SagaAssociation
+	Expected      *saga.SagaAssociation
 	ShouldError   bool
 	ExpectedError error
 }
@@ -68,8 +68,8 @@ func (c *SagaAssociationIDTestCase) Test() error {
 	association, err := c.Saga.AssociationID(c.Event)
 
 	if c.ShouldError {
-		if c.ExpectedError != nil && c.ExpectedError != err {
-			return fmt.Errorf("FAILED: %s.  Error: Expected error %#v, but got %#v", c.Label, c.ExpectedError, err)
+		if diff := deep.Equal(c.ExpectedError, err); c.ExpectedError != nil && diff != nil {
+			return fmt.Errorf("FAILED: %s.  Error: error does not match expected, details: %s", c.Label, diff)
 		}
 
 		if err == nil {
@@ -85,6 +85,61 @@ func (c *SagaAssociationIDTestCase) Test() error {
 }
 
 func (cases SagaAssociationIDTestCases) Test(t *testing.T) {
+	for i, c := range cases {
+		if err := c.Test(); err != nil {
+			t.Errorf("Case[%d] %s", i, err)
+		}
+	}
+}
+
+type SagaHandleEventTestCase struct {
+	Label          string
+	Given          []eventsource.Event
+	Event          eventsource.Event
+	Saga           saga.SagaAPI
+	ExpectedSaga   saga.SagaAPI
+	ExpectedResult *saga.HandleEventResult
+	ShouldError    bool
+	ExpectedError  error
+}
+
+type SagaHandleEventTestCases []*SagaHandleEventTestCase
+
+func (c *SagaHandleEventTestCase) Test() error {
+	var got saga.SagaAPI
+	if c.Saga != nil {
+		got = c.Saga
+	} else {
+		sagaType, _ := eventsource.GetTypeName(c.ExpectedSaga)
+		got = reflect.New(sagaType).Interface().(saga.SagaAPI)
+	}
+
+	for _, e := range c.Given {
+		got.HandleEvent(e)
+	}
+	result, err := got.HandleEvent(c.Event)
+
+	if c.ShouldError {
+		if diff := deep.Equal(c.ExpectedError, err); c.ExpectedError != nil && diff != nil {
+			return fmt.Errorf("FAILED: %s.  Error: error does not match expected, details: %s", c.Label, diff)
+		}
+
+		if err == nil {
+			return fmt.Errorf("FAILED: %s.  Error: Expected error, but got: %#v", c.Label, result)
+		}
+	} else {
+		if diff := deep.Equal(result, c.ExpectedResult); diff != nil {
+			return fmt.Errorf("FAILED: %s.  Error: result does not match expected, details: %s", c.Label, diff)
+		}
+		if diff := deep.Equal(got, c.ExpectedSaga); diff != nil {
+			return fmt.Errorf("FAILED: %s.  Error: saga does not match expected, details: %s", c.Label, diff)
+		}
+	}
+
+	return nil
+}
+
+func (cases SagaHandleEventTestCases) Test(t *testing.T) {
 	for i, c := range cases {
 		if err := c.Test(); err != nil {
 			t.Errorf("Case[%d] %s", i, err)
