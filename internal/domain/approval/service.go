@@ -3,6 +3,7 @@ package approval
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,15 +11,13 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/approval/command"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 )
 
-var url = "https://jsonplaceholder.cypress.io/todos"
+var apiURL = "https://jsonplaceholder.cypress.io"
 
 type OrderApproval struct {
-	ApprovalID  int               `json:"id"`
-	ServiceType model.ServiceType `json:"serviceType"`
-	Description string            `json:"description"`
+	ApprovalID  int    `json:"id"`
+	Description string `json:"description"`
 }
 
 type ServiceAPI interface {
@@ -28,6 +27,7 @@ type ServiceAPI interface {
 
 type Service struct {
 	eventSource eventsource.EventSourceAPI
+	url         string
 }
 
 func (s *Service) processCommand(c eventsource.Command) error {
@@ -37,6 +37,7 @@ func (s *Service) processCommand(c eventsource.Command) error {
 func NewService(eventSource eventsource.EventSourceAPI) *Service {
 	return &Service{
 		eventSource: eventSource,
+		url:         apiURL,
 	}
 }
 
@@ -50,7 +51,7 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(fmt.Sprintf("%s/todos", s.url), "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,11 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 		return nil, err
 	}
 
-	var o *OrderApproval
+	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
+		return nil, fmt.Errorf("Approval service returned %d status code, details: %s", resp.StatusCode, respBody)
+	}
+
+	o := &OrderApproval{}
 	if err := json.Unmarshal(respBody, o); err != nil {
 		return nil, err
 	}
@@ -68,7 +73,7 @@ func (s *Service) SubmitOrderForApproval(payload *OrderApproval) (*OrderApproval
 	if err := s.processCommand(&command.RequestApproval{ApprovalID: o.ApprovalID}); err != nil {
 		return nil, err
 	}
-	log.Printf("Approval submitted, got ID: %d", o.ApprovalID)
+	log.Printf("Approval requested with payload: %+v, got tracking ID: %d", payload, o.ApprovalID)
 
 	return o, nil
 }

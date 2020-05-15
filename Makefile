@@ -1,4 +1,4 @@
-default: clean infrastructure_eventforwarder order_writeapi order_readapi order_projection
+default: clean infrastructure_eventforwarder order_writeapi order_readapi order_projection order_fulfillment_saga
 
 # Infrastructure
 infrastructure_eventforwarder:
@@ -13,6 +13,9 @@ order_readapi:
 
 order_projection:
 	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_projection lambda/order/projection/order_projection.go
+
+order_fulfillment_saga:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_fulfillment_saga lambda/order/saga/order_fulfillment_saga.go
 
 # Tests
 test:

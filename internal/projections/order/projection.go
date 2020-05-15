@@ -39,7 +39,7 @@ func (p *Projection) HandleEvent(e es.Event) error {
 	case *event.OrderDelivered:
 		return p.handleDeliveredEvent(d, e)
 	default:
-		return fmt.Errorf("Unsupported event %T received in TestApplyEvent handler of the Order Projection: %+v", d, e)
+		return fmt.Errorf("Unsupported event %T received in Test handler of the Order Projection: %+v", d, e)
 	}
 }
 

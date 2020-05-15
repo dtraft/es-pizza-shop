@@ -50,7 +50,7 @@ func (c *Controller) registerRoutes(router *httprouter.Router) {
 }
 
 func init() {
-	var store eventsource.EventStore
+	var store eventsource.EventStorer
 	f := os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
 	if strings.Contains(f, "local") {
 		svc := dynamodb.New(session.New(), aws.NewConfig().WithRegion("localhost").WithEndpoint("http://host.docker.internal:9898"))

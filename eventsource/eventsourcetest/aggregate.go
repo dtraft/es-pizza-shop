@@ -9,7 +9,7 @@ import (
 	"github.com/go-test/deep"
 )
 
-type HandleCommandCase struct {
+type HandleCommandTestCase struct {
 	Label         string
 	Given         []eventsource.EventData
 	Command       eventsource.Command
@@ -18,9 +18,9 @@ type HandleCommandCase struct {
 	ExpectedError error
 }
 
-type HandleCommandCases []*HandleCommandCase
+type HandleCommandTestCases []*HandleCommandTestCase
 
-func (c *HandleCommandCase) Test(a eventsource.Aggregate) error {
+func (c *HandleCommandTestCase) Test(a eventsource.Aggregate) error {
 	// Setup aggregate for testing
 	for _, e := range c.Given {
 		event := eventsource.NewEvent(a, e)
@@ -66,7 +66,7 @@ func (c *HandleCommandCase) Test(a eventsource.Aggregate) error {
 	return nil
 }
 
-func (cases HandleCommandCases) Test(a eventsource.Aggregate, t *testing.T) {
+func (cases HandleCommandTestCases) Test(a eventsource.Aggregate, t *testing.T) {
 	aggregateType, _ := eventsource.GetTypeName(a)
 	for i, c := range cases {
 		aggregate := reflect.New(aggregateType).Interface().(eventsource.Aggregate)
@@ -76,13 +76,13 @@ func (cases HandleCommandCases) Test(a eventsource.Aggregate, t *testing.T) {
 	}
 }
 
-type ApplyEventCase struct {
+type ApplyEventTestCase struct {
 	Given    []eventsource.EventData
 	Event    eventsource.EventData
 	Expected eventsource.Aggregate
 }
 
-func (c *ApplyEventCase) TestApplyEvent(a eventsource.Aggregate) error {
+func (c *ApplyEventTestCase) Test(a eventsource.Aggregate) error {
 	// Setup aggregate for testing
 	for _, e := range c.Given {
 		event := eventsource.NewEvent(a, e)

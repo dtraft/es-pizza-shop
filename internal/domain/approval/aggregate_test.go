@@ -30,7 +30,7 @@ var approvalReceivedEvent = &event.ApprovalReceived{
 
 func TestAggregate_HandleCommand(t *testing.T) {
 
-	cases := eventsourcetest.HandleCommandCases{
+	cases := eventsourcetest.HandleCommandTestCases{
 		{
 			Label: "ignore double approvals requests",
 			Given: []eventsource.EventData{
@@ -70,7 +70,7 @@ func TestAggregate_HandleCommand(t *testing.T) {
 
 func TestAggregate_ApplyEvent(t *testing.T) {
 
-	cases := []*eventsourcetest.ApplyEventCase{
+	cases := []*eventsourcetest.ApplyEventTestCase{
 		{
 			Event: approvalReceivedEvent,
 			Expected: &Aggregate{
@@ -80,7 +80,7 @@ func TestAggregate_ApplyEvent(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		if err := c.TestApplyEvent(&Aggregate{}); err != nil {
+		if err := c.Test(&Aggregate{}); err != nil {
 			t.Errorf("Error is cases[%d]: %s", i, err)
 		}
 	}

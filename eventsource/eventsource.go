@@ -68,7 +68,7 @@ type Projection interface {
 	HandleEvent(event Event) error
 }
 
-type EventStore interface {
+type EventStorer interface {
 	SaveEvent(event Event) error
 	EventsForAggregate(aggregateID string) ([]Event, error)
 }
@@ -79,10 +79,10 @@ type EventSourceAPI interface {
 }
 
 type EventSource struct {
-	store EventStore
+	store EventStorer
 }
 
-func New(eventStore EventStore) *EventSource {
+func New(eventStore EventStorer) *EventSource {
 	return &EventSource{
 		store: eventStore,
 	}

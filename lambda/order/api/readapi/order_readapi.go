@@ -23,6 +23,7 @@ var router = httprouter.New()
 
 func init() {
 	router.GET("/orders", queryAllOrders)
+	router.GET("/orders/:orderID", getOrder)
 }
 
 func main() {
@@ -48,6 +49,20 @@ func queryAllOrders(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	log.Printf("Orders: %+v", orders)
 
 	jsonResponse(w, resources)
+}
+
+func getOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	orderID := p.ByName("orderID")
+
+	order, err := repo.GetOrder(orderID)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	log.Printf("Order: %+v", order)
+
+	jsonResponse(w, resourceFromOrder(order))
 }
 
 /*
