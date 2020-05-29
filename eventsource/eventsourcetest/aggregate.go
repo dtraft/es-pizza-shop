@@ -2,24 +2,25 @@ package eventsourcetest
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"github.com/go-test/deep"
 )
 
-type HandleCommandCase struct {
-	Given    []eventsource.EventData
-	Command  eventsource.Command
-	Expected []eventsource.EventData
+type HandleCommandTestCase struct {
+	Label         string
+	Given         []eventsource.EventData
+	Command       eventsource.Command
+	Expected      []eventsource.EventData
+	ShouldError   bool
+	ExpectedError error
 }
 
-type ApplyEventCase struct {
-	Given    []eventsource.EventData
-	Event    eventsource.EventData
-	Expected eventsource.Aggregate
-}
+type HandleCommandTestCases []*HandleCommandTestCase
 
-func (c *HandleCommandCase) TestHandleCommand(a eventsource.Aggregate) error {
+func (c *HandleCommandTestCase) Test(a eventsource.Aggregate) error {
 	// Setup aggregate for testing
 	for _, e := range c.Given {
 		event := eventsource.NewEvent(a, e)
@@ -31,8 +32,15 @@ func (c *HandleCommandCase) TestHandleCommand(a eventsource.Aggregate) error {
 
 	// Handle command
 	events, err := a.HandleCommand(c.Command)
-	if err != nil {
-		return err
+	if c.ShouldError {
+		if c.ExpectedError != nil && c.ExpectedError != err {
+			return fmt.Errorf("FAILED: %s.  Error: Expected error %#v, but got %#v", c.Label, c.ExpectedError, err)
+		}
+
+		if err == nil {
+			return fmt.Errorf("FAILED: %s.  Error: Expected error, but got: %#v", c.Label, events)
+		}
+		return nil
 	}
 
 	for i, event := range events {
@@ -40,25 +48,41 @@ func (c *HandleCommandCase) TestHandleCommand(a eventsource.Aggregate) error {
 		got := eventsource.NewEvent(a, event)
 
 		if exp.EventType != got.EventType {
-			return fmt.Errorf("Expected %s, got %s for EventType", exp.EventType, got.EventType)
+			return fmt.Errorf("FAILED: %s at events[%d].  Error: Expected %s, got %s for EventType", c.Label, i, exp.EventType, got.EventType)
 		}
 
 		if exp.AggregateType != got.AggregateType {
-			return fmt.Errorf("Expected %s, got %s for AggregateType", exp.AggregateType, got.AggregateType)
+			return fmt.Errorf("FAILED: %s at events[%d].  Expected %s, got %s for AggregateType", c.Label, i, exp.AggregateType, got.AggregateType)
 		}
 
 		if exp.EventTypeVersion != got.EventTypeVersion {
-			return fmt.Errorf("Expected %d, got %d for EventTypeVersion", exp.EventTypeVersion, got.EventTypeVersion)
+			return fmt.Errorf("FAILED: %s at events[%d].  Expected %d, got %d for EventTypeVersion", c.Label, i, exp.EventTypeVersion, got.EventTypeVersion)
 		}
 
 		if diff := deep.Equal(exp.Data, got.Data); diff != nil {
-			return fmt.Errorf("Events[%d]: %s", i, diff)
+			return fmt.Errorf("FAILED: %s.  Error at events[%d]: %s", c.Label, i, diff)
 		}
 	}
 	return nil
 }
 
-func (c *ApplyEventCase) TestApplyEvent(a eventsource.Aggregate) error {
+func (cases HandleCommandTestCases) Test(a eventsource.Aggregate, t *testing.T) {
+	aggregateType, _ := eventsource.GetTypeName(a)
+	for i, c := range cases {
+		aggregate := reflect.New(aggregateType).Interface().(eventsource.Aggregate)
+		if err := c.Test(aggregate); err != nil {
+			t.Errorf("Case[%d] %s", i, err)
+		}
+	}
+}
+
+type ApplyEventTestCase struct {
+	Given    []eventsource.EventData
+	Event    eventsource.EventData
+	Expected eventsource.Aggregate
+}
+
+func (c *ApplyEventTestCase) Test(a eventsource.Aggregate) error {
 	// Setup aggregate for testing
 	for _, e := range c.Given {
 		event := eventsource.NewEvent(a, e)

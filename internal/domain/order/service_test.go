@@ -152,6 +152,153 @@ func TestService_UpdateOrder(t *testing.T) {
 	}
 }
 
+func TestService_SubmitOrder(t *testing.T) {
+	cases := []struct {
+		Label       string
+		Check       Condition
+		ShouldError bool
+	}{
+		{
+			Label: "Should correctly issue the submit order command",
+			Check: func(c eventsource.Command) error {
+				cmd, ok := c.(*command.SubmitOrderCommand)
+				if !ok {
+					return fmt.Errorf("Expected %T, got %T", &command.SubmitOrderCommand{}, c)
+				}
+				if cmd.OrderID != "testOrderId" {
+					return fmt.Errorf("Expected `%s` for OrderID, got `%s`", "testOrderId", cmd.OrderID)
+				}
+				if err := deep.Equal(cmd.OrderID, "testOrderId"); err != nil {
+					return fmt.Errorf("%s", err)
+				}
+				return nil
+			},
+		},
+		{
+			Label: "Should bubble up errors",
+			Check: func(c eventsource.Command) error {
+				return nil
+			},
+			ShouldError: true,
+		},
+	}
+
+	for i, c := range cases {
+		s := NewService(&mockEventSource{
+			check:       c.Check,
+			shouldError: c.ShouldError,
+		})
+
+		err := s.SubmitOrder("testOrderId")
+		if c.ShouldError && err == nil {
+			t.Errorf("Cases[%d] FAILED: %s, expected an error.", i, c.Label)
+			continue
+		}
+
+		if !c.ShouldError && err != nil {
+			t.Errorf("Cases[%d] FAILED: %s.  Error: %s", i, c.Label, err)
+		}
+	}
+}
+
+func TestService_ApproveOrder(t *testing.T) {
+	cases := []struct {
+		Label       string
+		Check       Condition
+		ShouldError bool
+	}{
+		{
+			Label: "Should correctly issue the submit order command",
+			Check: func(c eventsource.Command) error {
+				cmd, ok := c.(*command.ApproveOrderCommand)
+				if !ok {
+					return fmt.Errorf("Expected %T, got %T", &command.ApproveOrderCommand{}, c)
+				}
+				if cmd.OrderID != "testOrderId" {
+					return fmt.Errorf("Expected `%s` for OrderID, got `%s`", "testOrderId", cmd.OrderID)
+				}
+				if err := deep.Equal(cmd.OrderID, "testOrderId"); err != nil {
+					return fmt.Errorf("%s", err)
+				}
+				return nil
+			},
+		},
+		{
+			Label: "Should bubble up errors",
+			Check: func(c eventsource.Command) error {
+				return nil
+			},
+			ShouldError: true,
+		},
+	}
+
+	for i, c := range cases {
+		s := NewService(&mockEventSource{
+			check:       c.Check,
+			shouldError: c.ShouldError,
+		})
+
+		err := s.ApproveOrder("testOrderId")
+		if c.ShouldError && err == nil {
+			t.Errorf("Cases[%d] FAILED: %s, expected an error.", i, c.Label)
+			continue
+		}
+
+		if !c.ShouldError && err != nil {
+			t.Errorf("Cases[%d] FAILED: %s.  Error: %s", i, c.Label, err)
+		}
+	}
+}
+
+func TestService_DeliverOrder(t *testing.T) {
+	cases := []struct {
+		Label       string
+		Check       Condition
+		ShouldError bool
+	}{
+		{
+			Label: "Should correctly issue the submit order command",
+			Check: func(c eventsource.Command) error {
+				cmd, ok := c.(*command.DeliverOrderCommand)
+				if !ok {
+					return fmt.Errorf("Expected %T, got %T", &command.DeliverOrderCommand{}, c)
+				}
+				if cmd.OrderID != "testOrderId" {
+					return fmt.Errorf("Expected `%s` for OrderID, got `%s`", "testOrderId", cmd.OrderID)
+				}
+				if err := deep.Equal(cmd.OrderID, "testOrderId"); err != nil {
+					return fmt.Errorf("%s", err)
+				}
+				return nil
+			},
+		},
+		{
+			Label: "Should bubble up errors",
+			Check: func(c eventsource.Command) error {
+				return nil
+			},
+			ShouldError: true,
+		},
+	}
+
+	for i, c := range cases {
+		s := NewService(&mockEventSource{
+			check:       c.Check,
+			shouldError: c.ShouldError,
+		})
+
+		err := s.DeliverOrder("testOrderId")
+		if c.ShouldError && err == nil {
+			t.Errorf("Cases[%d] FAILED: %s, expected an error.", i, c.Label)
+			continue
+		}
+
+		if !c.ShouldError && err != nil {
+			t.Errorf("Cases[%d] FAILED: %s.  Error: %s", i, c.Label, err)
+		}
+	}
+}
+
 type Condition func(c eventsource.Command) error
 
 type mockEventSource struct {

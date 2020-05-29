@@ -6,6 +6,7 @@ require (
 	github.com/apex/gateway v1.1.1
 	github.com/aws/aws-lambda-go v1.16.0
 	github.com/aws/aws-sdk-go v1.30.7
+	github.com/bitly/go-simplejson v0.5.0
 	github.com/campoy/jsonenums v0.0.0-20180221195324-eec6d38da64e // indirect
 	github.com/go-playground/validator/v10 v10.2.0
 	github.com/go-test/deep v1.0.5

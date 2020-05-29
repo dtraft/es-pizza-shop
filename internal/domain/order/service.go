@@ -12,6 +12,9 @@ import (
 type ServiceAPI interface {
 	StartOrder(order *model.Order) (string, error)
 	UpdateOrder(order *model.OrderPatch) error
+	SubmitOrder(orderID string) error
+	ApproveOrder(orderID string) error
+	DeliverOrder(orderID string) error
 }
 
 type Service struct {
@@ -55,6 +58,42 @@ func (s *Service) UpdateOrder(order *model.OrderPatch) error {
 		OrderID:     order.OrderID,
 		ServiceType: order.ServiceType,
 		Description: order.Description,
+	}
+
+	if err := s.processCommand(c); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) SubmitOrder(orderID string) error {
+	c := &command.SubmitOrderCommand{
+		OrderID: orderID,
+	}
+
+	if err := s.processCommand(c); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) ApproveOrder(orderID string) error {
+	c := &command.ApproveOrderCommand{
+		OrderID: orderID,
+	}
+
+	if err := s.processCommand(c); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) DeliverOrder(orderID string) error {
+	c := &command.DeliverOrderCommand{
+		OrderID: orderID,
 	}
 
 	if err := s.processCommand(c); err != nil {

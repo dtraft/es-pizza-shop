@@ -10,7 +10,7 @@ import (
 	"forge.lmig.com/n1505471/pizza-shop/eventsource"
 )
 
-type LoadCase struct {
+type EventLoadTestCase struct {
 	Label         string
 	Version       int
 	Event         string
@@ -19,9 +19,9 @@ type LoadCase struct {
 	ExpectedError error
 }
 
-type LoadCases []*LoadCase
+type EventLoadTestCases []*EventLoadTestCase
 
-func (c *LoadCase) Test() error {
+func (c *EventLoadTestCase) Test() error {
 	eventType, _ := eventsource.GetTypeName(c.Expected)
 	got := reflect.New(eventType).Interface().(eventsource.EventData)
 	err := got.Load([]byte(c.Event), c.Version)
@@ -43,7 +43,7 @@ func (c *LoadCase) Test() error {
 	return nil
 }
 
-func (cases LoadCases) Test(t *testing.T) {
+func (cases EventLoadTestCases) Test(t *testing.T) {
 	for i, c := range cases {
 		if err := c.Test(); err != nil {
 			t.Errorf("Case[%d] %s", i, err)

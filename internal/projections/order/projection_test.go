@@ -41,6 +41,18 @@ var descriptionSetEvent = eventsource.NewEvent(orderAgg, &event.OrderDescription
 	Description: "I'm a test!",
 })
 
+var submittedEvent = eventsource.NewEvent(orderAgg, &event.OrderSubmitted{
+	OrderID: "testOrderId",
+})
+
+var approvedEvent = eventsource.NewEvent(orderAgg, &event.OrderApproved{
+	OrderID: "testOrderId",
+})
+
+var deliveredEvent = eventsource.NewEvent(orderAgg, &event.OrderDelivered{
+	OrderID: "testOrderId",
+})
+
 func TestProjection_ApplyEvent(t *testing.T) {
 	cases := []struct {
 		Event    eventsource.Event
@@ -52,6 +64,7 @@ func TestProjection_ApplyEvent(t *testing.T) {
 				OrderID:     "testOrderId",
 				Description: "test desc",
 				ServiceType: model.Pickup,
+				Status:      model.Started,
 				CreatedAt:   &startedEvent.Timestamp,
 				UpdatedAt:   &startedEvent.Timestamp,
 			},
@@ -71,6 +84,30 @@ func TestProjection_ApplyEvent(t *testing.T) {
 				OrderID:     "testOrderId",
 				Description: "I'm a test!",
 				UpdatedAt:   &descriptionSetEvent.Timestamp,
+			},
+		},
+		{
+			Event: submittedEvent,
+			Expected: &Order{
+				OrderID:   "testOrderId",
+				Status:    model.Submitted,
+				UpdatedAt: &submittedEvent.Timestamp,
+			},
+		},
+		{
+			Event: approvedEvent,
+			Expected: &Order{
+				OrderID:   "testOrderId",
+				Status:    model.Approved,
+				UpdatedAt: &approvedEvent.Timestamp,
+			},
+		},
+		{
+			Event: deliveredEvent,
+			Expected: &Order{
+				OrderID:   "testOrderId",
+				Status:    model.Delivered,
+				UpdatedAt: &deliveredEvent.Timestamp,
 			},
 		},
 	}

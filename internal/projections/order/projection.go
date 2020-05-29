@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
+
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
 	. "forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
@@ -30,8 +32,14 @@ func (p *Projection) HandleEvent(e es.Event) error {
 		return p.handleServiceTypeSetEvent(d, e)
 	case *event.OrderDescriptionSet:
 		return p.handleDescriptionSetEvent(d, e)
+	case *event.OrderSubmitted:
+		return p.handleSubmittedEvent(d, e)
+	case *event.OrderApproved:
+		return p.handleApprovedEvent(d, e)
+	case *event.OrderDelivered:
+		return p.handleDeliveredEvent(d, e)
 	default:
-		return fmt.Errorf("Unsupported event %T received in TestApplyEvent handler of the Order Projection: %+v", d, e)
+		return fmt.Errorf("Unsupported event %T received in Test handler of the Order Projection: %+v", d, e)
 	}
 }
 
@@ -44,6 +52,7 @@ func (p *Projection) handleOrderStartedEvent(d *event.OrderStartedEvent, e es.Ev
 		OrderID:     d.OrderID,
 		ServiceType: d.ServiceType,
 		Description: d.Description,
+		Status:      model.Started,
 		CreatedAt:   &e.Timestamp,
 		UpdatedAt:   &e.Timestamp,
 	})
@@ -61,5 +70,29 @@ func (p *Projection) handleDescriptionSetEvent(d *event.OrderDescriptionSet, e e
 	return p.repo.Patch(d.OrderID, &Order{
 		Description: d.Description,
 		UpdatedAt:   &e.Timestamp,
+	})
+}
+
+func (p *Projection) handleSubmittedEvent(d *event.OrderSubmitted, e es.Event) error {
+
+	return p.repo.Patch(d.OrderID, &Order{
+		Status:    model.Submitted,
+		UpdatedAt: &e.Timestamp,
+	})
+}
+
+func (p *Projection) handleApprovedEvent(d *event.OrderApproved, e es.Event) error {
+
+	return p.repo.Patch(d.OrderID, &Order{
+		Status:    model.Approved,
+		UpdatedAt: &e.Timestamp,
+	})
+}
+
+func (p *Projection) handleDeliveredEvent(d *event.OrderDelivered, e es.Event) error {
+
+	return p.repo.Patch(d.OrderID, &Order{
+		Status:    model.Delivered,
+		UpdatedAt: &e.Timestamp,
 	})
 }
