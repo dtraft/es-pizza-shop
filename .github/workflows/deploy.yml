@@ -75,7 +75,6 @@ jobs:
     name: 'Replay Order Projection'
     if: "github.event.deployment.task == 'replay:order-projection'"
     runs-on: 'ubuntu-latest'
-    needs: replay-cluster
     steps:
       - name: 'Deployment pending'
         uses: 'deliverybot/status@master'
