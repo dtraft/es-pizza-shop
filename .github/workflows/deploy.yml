@@ -2,6 +2,9 @@ name: 'Deploy'
 on: ['deployment']
 
 jobs:
+  ######################
+  # Code Deployment
+  ######################
   deployment:
     name: 'App Deployment'
     if: "github.event.deployment.task == 'deploy'"
@@ -48,6 +51,69 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: 'deployment success'
+        if: success()
+        uses: 'deliverybot/status@master'
+        with:
+          state: 'success'
+          token: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: 'deployment failure'
+        if: failure()
+        uses: 'deliverybot/status@master'
+        with:
+          state: 'failure'
+          token: '${{ secrets.GITHUB_TOKEN }}'
+
+
+  ######################
+  # Replay Deployments
+  ######################
+
+  replay-order-projection:
+    name: 'Replay Order Projection'
+    if: "github.event.deployment.task == 'replay:order-projection'"
+    runs-on: 'ubuntu-latest'
+    needs: replay-cluster
+    steps:
+      - name: 'Deployment pending'
+        uses: 'deliverybot/status@master'
+        with:
+          state: 'pending'
+          token: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up Go 1.14
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14
+        id: go
+
+      - uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Package Replay
+        run: make package_order_projection_replay
+
+      - name: Push to ECR
+        id: ecr
+        uses: jwalton/gh-ecr-push@v1
+        with:
+          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region: us-east-1
+          local-image: order-projection-replay
+          image: replay/order-projection:dev-${{ github.sha }}
 
       - name: 'deployment success'
         if: success()

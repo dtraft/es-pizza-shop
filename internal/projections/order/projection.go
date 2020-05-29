@@ -1,7 +1,6 @@
 package order
 
 import (
-	"fmt"
 	"log"
 
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
@@ -39,7 +38,8 @@ func (p *Projection) HandleEvent(e es.Event) error {
 	case *event.OrderDelivered:
 		return p.handleDeliveredEvent(d, e)
 	default:
-		return fmt.Errorf("Unsupported event %T received in Test handler of the Order Projection: %+v", d, e)
+		log.Printf("Unsupported event %T received in handler of the Order Projection: %+v", d, e)
+		return nil
 	}
 }
 
