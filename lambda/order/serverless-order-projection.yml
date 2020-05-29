@@ -1,0 +1,25 @@
+service: pizza-shop--order-projection-dynamodb
+
+custom:
+  version: 2020-05-29
+
+provider:
+  name: aws
+  runtime: go1.x
+  versionFunctions: false
+  stage: ${opt:stage, self:custom.defaultStage}
+  stackName: 'pizza-shop--order-projection-dynamodb-${self:custom.version}'
+
+
+Resources:
+  OrderTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: 'OrderTable-${opt:stage}-${self:custom.version}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
