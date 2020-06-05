@@ -6,17 +6,17 @@ import (
 
 	"forge.lmig.com/n1505471/pizza-shop/eventsource/store/s3Store"
 
-	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/repository"
+	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order_history/repository"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 
-	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order"
+	history "forge.lmig.com/n1505471/pizza-shop/internal/projections/order_history"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 func main() {
-	log.Printf("Gonna start replaying now!")
+	log.Printf("Starting replay!")
 
 	s3Svc := s3.New(session.New())
 	ddbSvc := dynamodb.New(session.New())
@@ -24,7 +24,7 @@ func main() {
 	svc := s3Store.New(s3Svc, os.Getenv("EVENT_BUCKET"))
 
 	repo := repository.NewRepository(ddbSvc, os.Getenv("TABLE_NAME"))
-	projection := order.NewProjection(repo)
+	projection := history.NewProjection(repo)
 
 	pagecount := 0
 	// List events in s3Store, page by page

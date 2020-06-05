@@ -26,8 +26,14 @@ order_fulfillment_saga:
 order_projection_replay:
 	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_projection_replay lambda/order/replay/order_projection_replay.go
 
+order_history_projection_replay:
+	env GOOS=linux go build -ldflags="-s -w"  -o .bin/order_history_projection_replay lambda/order/replay/order_history_projection_replay.go
+
 package_order_projection_replay: order_projection_replay
 	docker build .bin -f lambda/order/replay.dockerfile -t order-projection-replay
+
+package_order_history_projection_replay: order_history_projection_replay
+	docker build .bin -f lambda/order/history_replay.dockerfile -t order-history-projection-replay
 
 # Tests
 test:

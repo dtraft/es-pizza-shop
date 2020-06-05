@@ -30,7 +30,7 @@ EventForwarder:
       Resource: !Ref EventBus
     - Effect: Allow
       Action:
-        - s3:PutObject
+        - s3Store:PutObject
       Resource:
         - !GetAtt EventRepository.Arn
         - !Join

@@ -8,6 +8,14 @@ import (
 
 var registry = make(map[string]reflect.Type)
 
+type UnregisteredEventError struct {
+	EventType string
+}
+
+func (e *UnregisteredEventError) Error() string {
+	return fmt.Sprintf("%s is not a registered event type", e.EventType)
+}
+
 func RegisterEventType(source EventData) {
 	rawType, name := GetTypeName(source)
 	registry[name] = rawType
@@ -17,7 +25,7 @@ func GetEventOfType(name string) (EventData, error) {
 	rawType, ok := registry[name]
 
 	if !ok {
-		return nil, fmt.Errorf("can't find %s in registry", name)
+		return nil, &UnregisteredEventError{name}
 	}
 
 	return reflect.New(rawType).Interface().(EventData), nil

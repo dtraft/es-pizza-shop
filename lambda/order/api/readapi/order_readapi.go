@@ -7,9 +7,12 @@ import (
 	"os"
 	"time"
 
+	model2 "forge.lmig.com/n1505471/pizza-shop/internal/projections/order_history/model"
+
 	domain "forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
 	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/repository"
+	history "forge.lmig.com/n1505471/pizza-shop/internal/projections/order_history/repository"
 	"github.com/apex/gateway"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -19,11 +22,13 @@ import (
 
 var svc = dynamodb.New(session.New(), aws.NewConfig())
 var repo = repository.NewRepository(svc, os.Getenv("TABLE_NAME"))
+var historyRepo = history.NewRepository(svc, os.Getenv("HISTORY_TABLE_NAME"))
 var router = httprouter.New()
 
 func init() {
 	router.GET("/orders", queryAllOrders)
 	router.GET("/orders/:orderID", getOrder)
+	router.GET("/orders/history/:orderID", getOrderHistory)
 }
 
 func main() {
@@ -65,6 +70,23 @@ func getOrder(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	jsonResponse(w, resourceFromOrder(order))
 }
 
+func getOrderHistory(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	orderID := p.ByName("orderID")
+
+	records, err := historyRepo.QueryHistoryForOrderID(orderID)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	var resources []*historyRecordResource
+	for _, r := range records {
+		resources = append(resources, resourceFromHistoryRecord(r))
+	}
+
+	jsonResponse(w, resources)
+}
+
 /*
  * Resources
  */
@@ -77,6 +99,20 @@ type orderResource struct {
 
 	CreatedAt *time.Time `json:"createdAt"`
 	UpdatedAt *time.Time `json:"updatedAt"`
+}
+
+type historyRecordResource struct {
+	OrderID         string     `json:"orderId"`
+	Description     string     `json:"transactionDescription"`
+	TransactionDate *time.Time `json:"transactionDate"`
+}
+
+func resourceFromHistoryRecord(r *model2.OrderHistoryRecord) *historyRecordResource {
+	return &historyRecordResource{
+		OrderID:         r.OrderID,
+		Description:     r.Description,
+		TransactionDate: r.TransactionDate,
+	}
 }
 
 func resourceFromOrder(o *model.Order) *orderResource {

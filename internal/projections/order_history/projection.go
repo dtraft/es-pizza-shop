@@ -1,14 +1,14 @@
 package order
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
-
-	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/model"
 
 	es "forge.lmig.com/n1505471/pizza-shop/eventsource"
 	"forge.lmig.com/n1505471/pizza-shop/internal/domain/order/event"
-	. "forge.lmig.com/n1505471/pizza-shop/internal/projections/order/model"
-	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order/repository"
+	. "forge.lmig.com/n1505471/pizza-shop/internal/projections/order_history/model"
+	"forge.lmig.com/n1505471/pizza-shop/internal/projections/order_history/repository"
 )
 
 // Projection
@@ -48,51 +48,52 @@ func (p *Projection) HandleEvent(e es.Event) error {
  */
 
 func (p *Projection) handleOrderStartedEvent(d *event.OrderStartedEvent, e es.Event) error {
-	return p.repo.Save(&Order{
-		OrderID:     d.OrderID,
-		ServiceType: d.ServiceType,
-		Description: d.Description,
-		Status:      model.Started,
-		CreatedAt:   &e.Timestamp,
-		UpdatedAt:   &e.Timestamp,
+	serviceType, _ := json.Marshal(d.ServiceType)
+	return p.repo.Save(&OrderHistoryRecord{
+		OrderID:         d.OrderID,
+		Description:     fmt.Sprintf("Order started with description: %s and serviceType: %s", d.Description, string(serviceType)),
+		TransactionDate: &e.Timestamp,
 	})
 }
 
 func (p *Projection) handleServiceTypeSetEvent(d *event.OrderServiceTypeSetEvent, e es.Event) error {
-	return p.repo.Patch(d.OrderID, &Order{
-		ServiceType: d.ServiceType,
-		UpdatedAt:   &e.Timestamp,
+	serviceType, _ := json.Marshal(d.ServiceType)
+	return p.repo.Save(&OrderHistoryRecord{
+		OrderID:         d.OrderID,
+		Description:     fmt.Sprintf("ServiceType updated to: %s", string(serviceType)),
+		TransactionDate: &e.Timestamp,
 	})
 }
 
 func (p *Projection) handleDescriptionSetEvent(d *event.OrderDescriptionSet, e es.Event) error {
-
-	return p.repo.Patch(d.OrderID, &Order{
-		Description: d.Description,
-		UpdatedAt:   &e.Timestamp,
+	return p.repo.Save(&OrderHistoryRecord{
+		OrderID:         d.OrderID,
+		Description:     fmt.Sprintf("Description updated to: %s", d.Description),
+		TransactionDate: &e.Timestamp,
 	})
 }
 
 func (p *Projection) handleSubmittedEvent(d *event.OrderSubmitted, e es.Event) error {
-
-	return p.repo.Patch(d.OrderID, &Order{
-		Status:    model.Submitted,
-		UpdatedAt: &e.Timestamp,
+	return p.repo.Save(&OrderHistoryRecord{
+		OrderID:         d.OrderID,
+		Description:     "Order Submitted.",
+		TransactionDate: &e.Timestamp,
 	})
 }
 
 func (p *Projection) handleApprovedEvent(d *event.OrderApproved, e es.Event) error {
 
-	return p.repo.Patch(d.OrderID, &Order{
-		Status:    model.Approved,
-		UpdatedAt: &e.Timestamp,
+	return p.repo.Save(&OrderHistoryRecord{
+		OrderID:         d.OrderID,
+		Description:     "Order Approved.",
+		TransactionDate: &e.Timestamp,
 	})
 }
 
 func (p *Projection) handleDeliveredEvent(d *event.OrderDelivered, e es.Event) error {
-
-	return p.repo.Patch(d.OrderID, &Order{
-		Status:    model.Delivered,
-		UpdatedAt: &e.Timestamp,
+	return p.repo.Save(&OrderHistoryRecord{
+		OrderID:         d.OrderID,
+		Description:     "Order Delivered.",
+		TransactionDate: &e.Timestamp,
 	})
 }

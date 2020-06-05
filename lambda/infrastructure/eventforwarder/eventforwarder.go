@@ -92,12 +92,12 @@ func HandleRequest(ctx context.Context, e DynamoEvent) error {
 					if aerr, ok := err.(awserr.Error); ok {
 						switch aerr.Code() {
 						default:
-							log.Printf("Error putting event to s3: %s.\n", aerr.Error())
+							log.Printf("Error putting event to s3Store: %s.\n", aerr.Error())
 						}
 					} else {
 						// Print the error, cast err to awserr.Error to get the Code and
 						// Message from an error.
-						log.Printf("Error putting event to s3: %s.\n", err.Error())
+						log.Printf("Error putting event to s3Store: %s.\n", err.Error())
 					}
 				}
 				wg.Done()
