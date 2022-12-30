@@ -10,7 +10,7 @@
     "serverless-iam-roles-per-function": "^2.0.2"
   },
   "devDependencies": {
-    "serverless-dynamodb-local": "^0.2.39",
+    "serverless-dynamodb-local": "^1.0.2",
     "serverless-offline": "^6.1.4"
   },
   "author": "Drew Trafton",
