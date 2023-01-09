@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "serverless-dynamodb-local": "^0.2.39",
-    "serverless-offline": "^6.1.4"
+    "serverless-offline": "^12.0.4"
   },
   "author": "Drew Trafton",
   "license": "ISC"
